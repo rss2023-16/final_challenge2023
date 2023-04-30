@@ -26,31 +26,8 @@ class PurePursuit(object):
         self.drive_pub = rospy.Publisher("/drive", AckermannDriveStamped, queue_size=1)
         self.error = rospy.Publisher("/error", Float32, queue_size=1)
 
-        #############
-        #############
-        #############
-        #############
-        #############
-        # self.odom_topic       = rospy.get_param("~odom_topic")
-        # self.wheelbase_length = 1.0 # FILL IN #
-        # self.trajectory  = utils.LineTrajectory("/followed_trajectory")
-        # self.followed_trajectory  = utils.LineTrajectory("/followed_trajectory", color = (1.0, 0.0, 0.0))
-        # self.traj_sub = rospy.Subscriber("/trajectory/current", PoseArray, self.trajectory_callback, queue_size=1)
-        # self.drive_pub = rospy.Publisher("/drive", AckermannDriveStamped, queue_size=1)
-        # self.current_pose = rospy.Subscriber(self.odom_topic, Odometry, self.pose_callback, queue_size = 1 )
-        # self.traj = None
-        # # Creating some visualization publishers to debug the best point and turning
-        # self.two_closest_points_pub = rospy.Publisher("/pure_pursuit/two_closest_points", PointStamped, queue_size=1)
-        # self.closest_point_pub = rospy.Publisher("/pure_pursuit/closest_point", PointStamped, queue_size=1)
-        # self.point_wrt_car_pub = rospy.Publisher("/pure_pursuit/point_wrt_car", PointStamped, queue_size=1)
-        # self.header_stamp = None
-        #############
-        #############
-        #############
-        #############
-        #############
-
-
+        self.speed = rospy.get_param("~speed", 1.0)
+        
         # PID Control Params
         self.last_time = rospy.get_time()
         
@@ -91,7 +68,7 @@ class PurePursuit(object):
         Outputs: 
             A drive command to car for it to stay in the lane. 
         '''
-        #convert each laneArray pixel to car frame coordinate. 
+        #convert each laneArray pixel to car frame  xy coordinate
         leftLane = laneArray[0, :]
         rightLane = laneArray[1, :]
 
@@ -119,7 +96,10 @@ class PurePursuit(object):
         xMidLine = (leftLaneCarFrame[:,0] + rightLaneCarFrame[:,0])/2
         yMidLine = (leftLaneCarFrame[:,1] + rightLaneCarFrame[:,1])/2
         midLine = np.zeros(leftLane.shape)
-        imin, distmin = self.find_closest_segment(self, 0, 0, midLine): 
+        midLine[:,0] = xMidLine
+        midLine[:,1] = yMidLine
+        imin, distmin = self.find_closest_segment(self, 0, 0, midLine) 
+
 
 
 
@@ -193,6 +173,7 @@ class PurePursuit(object):
         Inputs: 
             xcurrent: current x position of the car 
             ycurrent: current y position of the car
+            trajXYCoords: np.array for [[x,y],[x,y]...] coordinates of trajectory
         Outputs: 
             A bunch of parameters defining the closest segment to the car. 
         '''
@@ -236,6 +217,7 @@ class PurePursuit(object):
         '''
         @returns: a tuple of the lookahead point and angle as ((x, y), angle)
         '''
+        ################ Math to find the lookahead point. ################
         rospy.logerr("find lookahead point")
         firstPoint = trajXYCoords[imin]
         secondPoint = trajXYCoords[imin+1]
@@ -275,72 +257,29 @@ class PurePursuit(object):
         sqrt_disc = np.sqrt(disc)
         t1 = (-b +sqrt_disc) / (2*a)
         t2 = (-b -sqrt_disc) / (2*a)
-
-        # TODO: when to use this?? currently this interrupts corners
-        # if not (0 <= t1 <= 1 or 0 <= t2 <= 1):
-        #     raise ValueError('You would hit if the line extended')
-            
-        #right now we return two points which is no bueno
+        ###################################################################
+        # Two intersections are found
         point1 = p1+t1*V
         point2 = p1+t2*V
-        # t = max(0, min(1, -b /(2*a))) # returns closest point from extended line and point (which we already have)
+
+        # We see which points is in front of the car and pick that one since thats the direction we're driving in//
         if (point1[0]<0) and (point2[0] <0):
             rospy.logerr('ERROR!!!!! BOTH POINTS ARE BEHIND CAR')
+        elif (point1[0]>0) and (point2[0] >0): 
+            rospy.logerr('ERROR!!!!! BOTH POINTS ARE IN FRONT CAR')
         elif point1[0] < 0: 
             lookaheadPoint = point2
-        elif point2[0] < 0: 
+        else: # point2[0] < 0: 
             lookaheadPoint = point1
-        else: 
-            rospy.logerr('ERROR!!!!! BOTH POINTS ARE IN FRONT CAR')
 
-        # calculate which of the points is closer for the car to TURN to
-        angle = self.find_angle_from_car_to_point(xcurrent, ycurrent, angle_current, lookaheadPoint)
-
-    
-        # rospy.logerr("rel x, rel y: " + str(relative_x) + ", " + str(relative_y))
 
         steering_angle = min(0.34, np.arctan(abs(lookaheadPoint[1]/lookaheadPoint[0])))
         rospy.logerr("mag of steering angle: " + str(steering_angle))
+
         # apply direction
         steering_angle *= np.sign(lookaheadPoint[1])
 
         return lookaheadPoint, steering_angle
-    
-        # point_to_axis_angle = self.wrap_angle(self.find_angle_between_vectors([1, 0], best_point))
-        # car_heading = self.wrap_angle(angle_current)
-        # rospy.logerr("Point to axis angle: " +  str(point_to_axis_angle) + "  :  car heading angle: " + str(car_heading))
-        # if car_heading > 0:
-        #     if point_to_axis_angle > car_heading: # car should turn in + dir towards point
-        #         rospy.logerr("turn +")
-        #         return best_point, abs(best_angle)
-        #     else: # car should turn in - dir towards point
-        #         rospy.logerr("turn -")
-        #         return best_point, -1.0*abs(best_angle)
-        # else:
-        #     if point_to_axis_angle > car_heading: # car should turn in + dir towards point
-        #         rospy.logerr("turn -")
-        #         return best_point, -1.0 * abs(best_angle)
-        #     else: # car should turn in - dir towards point
-        #         rospy.logerr("turn +")
-        #         return best_point, abs(best_angle)
-
-    def transform_point_to_car_frame(self, car_transform, point):
-        (trans, rot) = car_transform # rot is a list of quaternion values
-        
-        roll, pitch, yaw = tf.transformations.euler_from_quaternion(rot)
-        rospy.logerr("trans: " + str(trans) + ", rot: " + str(rot) + ", yaw: " + str(yaw))
-        (x, y) = point
-        inv_R = np.array([
-                [np.cos(yaw), np.sin(yaw)],
-                [-np.sin(yaw), np.cos(yaw)]
-                ])
-
-        x_diff = x - trans[0]
-        y_diff = y - trans[1]
-        
-        new_x = np.cos(yaw)*x_diff + np.sin(yaw)*y_diff
-        new_y = -np.sin(yaw)*x_diff + np.cos(yaw)*y_diff
-        return new_x, new_y
 
     
     def find_angle_from_car_to_point(self, xcurrent, ycurrent, angle_current, point):
@@ -355,30 +294,6 @@ class PurePursuit(object):
         car_point = [np.cos(angle_current), np.sin(angle_current)]
 
         return self.find_angle_between_vectors(shifted, car_point)
-
-    def find_angle_between_vectors(self, v1, v2):
-        '''
-        Given two vectors starting from the origin, find the angle between them. 
-        v1 dot v2 = |v1| |v2| cos(angle between vectors)
-        We can use this formula to solve for the angle
-
-        '''
-        return np.arccos(np.dot(v1, v2)/np.linalg.norm(v1)/np.linalg.norm(v2))
-    
-
-    def quaternion_to_angle(self, q):
-        """Convert a quaternion _message_ into an angle in radians.
-        The angle represents the yaw.
-        This is not just the z component of the quaternion."""
-        x, y, z, w = q.x, q.y, q.z, q.w
-        roll, pitch, yaw = tf.transformations.euler_from_quaternion((x, y, z, w))
-        return yaw
-    
-    def wrap_angle(self, angle):
-        '''
-        Keep angle in range [-pi, pi]
-        '''
-        return (angle + np.pi) % (2 * np.pi) - np.pi
     
     def pid_control(self, err):
         # update PID gains from rosparams
