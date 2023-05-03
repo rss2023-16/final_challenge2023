@@ -1,5 +1,0 @@
-<launch>
-  <node pkg="final_challenge" type="city_driver.py" name="city_driver" output="screen">
-    <rosparam command="load" file="$(find final_challenge)/params.yaml"/>
-  </node>
-</launch>

@@ -74,6 +74,10 @@ class HomographyTransformer:
     def __init__(self):
         self.cone_px_sub = rospy.Subscriber("/relative_cone_px", ConeLocationPixel, self.cone_detection_callback)
         self.cone_pub = rospy.Publisher("/relative_cone", ConeLocation, queue_size=10)
+
+        self.stop_sign_px_sub = rospy.Subscriber("/stop_sign_px", ConeLocationPixel, self.stop_sign_detection_callback)
+        self.stop_sign_pub = rospy.Publisher("/stop_sign", ConeLocation, queue_size=10)
+
         self.click_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color_mouse_left", Point, self.cone_detection_callback)
         self.marker_pub = rospy.Publisher("/cone_marker",
             Marker, queue_size=1)
@@ -94,22 +98,14 @@ class HomographyTransformer:
 
         self.h, err = cv2.findHomography(np_pts_image, np_pts_ground)
 
-    def cone_detection_callback(self, msg):
-        #Extract information from message
-        #try:
-        #    u = msg.u
-        #    v = msg.v
-        #except:
-        #    u = msg.x
-        #    v = msg.y
-        #print(u,v)
+    def convert_and_publish(self, msg, point_pub, msg_pub):
         u = msg.u
         v = msg.v
         
         point = Point()
         point.x = u
         point.y = v
-        self.point_pub.publish(point)
+        point_pub.publish(point)
 
         #Call to main function
         x, y = self.transformUvToXy(u, v)
@@ -120,7 +116,15 @@ class HomographyTransformer:
         relative_xy_msg.x_pos = x
         relative_xy_msg.y_pos = y
 
-        self.cone_pub.publish(relative_xy_msg)
+        msg_pub.publish(relative_xy_msg)
+
+    # Transform pixel to real via homography and publish to cone publishers
+    def cone_detection_callback(self, msg):
+        self.convert_and_publish(msg, self.point_pub, self.cone_pub)
+
+    # Transform pixl to real via homography and publish to stop sign publishers
+    def stop_sign_detection_callback(self, msg):
+        self.convert_and_publish(msg, self.point_pub, self.stop_sign_pub)
 
 
     def transformUvToXy(self, u, v):
