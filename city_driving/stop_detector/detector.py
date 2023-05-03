@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw
 
 class StopSignDetector:
   def __init__(self, threshold=0.5):
+    print("initializing stop sign detector .. ")
     self.model = torch.hub.load('ultralytics/yolov5', 'yolov5n', pretrained=True)
     self.threshold = threshold
     self.results = None
@@ -75,4 +76,7 @@ def get_bounding_box(df, label='stop sign', threshold=THRESHOLD):
     return [coord.values[0] for coord in coords]
 
 if __name__=="__main__":
+    print("Creating a Stop sign detector")
     detector = StopSignDetector()
+    res = detector.predict("/home/fiona/racecar_docker/home/racecar_ws/src/final_challenge2023/city_driving/test_images/stop_sign_left.png")
+    print("res: ", res)
