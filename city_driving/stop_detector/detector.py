@@ -78,24 +78,21 @@ def get_bounding_box(df, label='stop sign', threshold=THRESHOLD):
     return [coord.values[0] for coord in coords]
 
 def get_images_from_folder(folder):
-    # print("finding images from ", folder)
     imgs = []
     for filename in glob.glob(os.path.join(folder, '*.png')):
         with open(os.path.join(os.getcwd(), filename), 'r') as f: # open in readonly mode
             imgs.append(f.name)
-    # print("found ", len(imgs), " images")
     return imgs
 
 if __name__=="__main__":
-    print("Creating a Stop sign detector")
     detector = StopSignDetector()
-    # pictures = get_images_from_folder("/home/fiona/racecar_docker/home/racecar_ws/src/final_challenge2023/city_driving/test_images/stop_sign_imgs")
-    # for pic in pictures:
-    #   #res = detector.predict(pic)
-    #   img_name = pic
-    #   im = read_image(img_name)
-    #   img_with_box = detector.draw_box(im)
-    #   img_with_box.show()
+    pictures = get_images_from_folder("/home/fiona/racecar_docker/home/racecar_ws/src/final_challenge2023/city_driving/test_images/")
+    for pic in pictures:
+      #res = detector.predict(pic)
+      img_name = pic
+      im = read_image(img_name)
+      img_with_box = detector.draw_box(im)
+      img_with_box.show()
       #print("res: ", res)
 
 
