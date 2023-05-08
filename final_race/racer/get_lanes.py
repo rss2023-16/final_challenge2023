@@ -41,15 +41,19 @@ def cd_color_segmentation(img, template=None):
     # image_print(mask)
     
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #convert to grayscale
+    cv2.imshow("image1", gray)
     threshold = 210 # filters.threshold_otsu(gray)
     binary = (gray>threshold)
     skeleton = morphology.skeletonize(binary)
     cv_skel = img_as_ubyte(skeleton)
+    cv2.imshow("image2", cv_skel)
     lines = cv2.HoughLines(cv_skel, 10, np.pi/18, 150)
-    print(np.shape(lines))
-    print(lines)
+    print(np.shape(lines), 'i am lines shape')
+    print(lines, 'i am line')
+    image = cv2.line(cv_skel, (0, 0), (100, 100), (0, 0, 255), 2)
+    cv2.imshow("image3", image)
     for rho,theta in lines[0]:
-        print(rho, theta)
+        print(rho, theta, 'rho theta')
         a = np.cos(theta)
         b = np.sin(theta)
         x0 = a*rho
@@ -58,9 +62,9 @@ def cd_color_segmentation(img, template=None):
         y1 = int(y0 + 1000*(a))
         x2 = int(x0 - 1000*(-b))
         y2 = int(y0 - 1000*(a))
-        print(x1, y1, x2, y2)
-        cv2.line(cv_skel, (x1, y1), (x2, y2), (0, 0, 255), 2)
-        cv2.imshow("image", cv_skel)
+        print(x1, y1, x2, y2, 'i am x1,y1,x2,y2')
+        image = cv2.line(gray, (0, 0), (250, 250), (0, 255, 0), 9)
+        cv2.imshow("image", gray)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
     # vert_pad = len(cv_skel)//3
@@ -68,5 +72,7 @@ def cd_color_segmentation(img, template=None):
     # return cropped
     # image_print(cropped)
 
-img = cv2.imread('/Users/katherinelin/Documents/6.141/racecar_docker/home/racecar_ws/src/final_challenge2023/media/track33.png')
+img = cv2.imread('C:/Users/adria/racecar_docker/home/racecar_ws/src/final_challenge2023/media/track33.png')
 cd_color_segmentation(img)
+
+
