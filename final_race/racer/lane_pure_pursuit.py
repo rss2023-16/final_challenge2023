@@ -13,8 +13,6 @@ from std_msgs.msg import Float32
 from visualization_msgs.msg import Marker
 from ackermann_msgs.msg import AckermannDriveStamped
 from nav_msgs.msg import Odometry
-from h
-import math
 
 
 class PurePursuit(object):
@@ -280,20 +278,6 @@ class PurePursuit(object):
         steering_angle *= np.sign(lookaheadPoint[1])
 
         return lookaheadPoint, steering_angle
-
-    
-    def find_angle_from_car_to_point(self, xcurrent, ycurrent, angle_current, point):
-        ''' Given the car location as (xcurrent, ycurrent) and the car heading as angle_current, 
-            calculate the angle between the car's heading and the point.
-            Return this angle
-        '''
-        # shift points so that car is at origin
-        shifted = [point[0] - xcurrent, point[1] - ycurrent]
-
-        # find dot product between car heading and point
-        car_point = [np.cos(angle_current), np.sin(angle_current)]
-
-        return self.find_angle_between_vectors(shifted, car_point)
     
     def pid_control(self, err):
         # update PID gains from rosparams
