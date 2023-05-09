@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import pdb
-from skimage import morphology, filters, img_as_ubyte
 
 #################### X-Y CONVENTIONS #########################
 # 0,0  X  > > > > >
@@ -33,15 +32,15 @@ def calc_intersection_with_bottom(rho, theta, bottom_y, epsilon):
     y0 = b*rho
     slope = -a/b 
     intercept = y0+a*x0/b 
+    x1 = int(x0 + 1000*(-b))
+    y1 = int(y0 + 1000*(a))
+    x2 = int(x0 - 1000*(-b))
+    y2 = int(y0 - 1000*(a))
+    cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
+    cv2.imshow("image", img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
     return (bottom_y-intercept)/slope
-    # x1 = int(x0 + 1000*(-b))
-    # y1 = int(y0 + 1000*(a))
-    # x2 = int(x0 - 1000*(-b))
-    # y2 = int(y0 - 1000*(a))
-    # cv2.line(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
-    # cv2.imshow("image", img)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
 
 def find_intersection(rho1, theta1, rho2, theta2):
     a1 = np.cos(theta1)
@@ -59,21 +58,10 @@ def find_intersection(rho1, theta1, rho2, theta2):
     x = int((intercept2-intercept1)/(slope1-slope2))
     y = int(slope1*x+intercept1)
     
-    # x11 = int(x1 + 1000*(-b1))
-    # y11 = int(y1 + 1000*(a1))
-    # x21 = int(x1 - 1000*(-b1))
-    # y21 = int(y1 - 1000*(a1))
-    # cv2.line(img, (x11, y11), (x21, y21), (0, 0, 255), 2)
-
-    # x12 = int(x2 + 1000*(-b2))
-    # y12 = int(y2 + 1000*(a2))
-    # x22 = int(x2 - 1000*(-b2))
-    # y22 = int(y2 - 1000*(a2))
-    # cv2.line(img, (x12, y12), (x22, y22), (0, 0, 255), 2)
-    # cv2.line(img, (x+10, y+10), (x-10, y-10), (0, 255, 0), 5)
-    # cv2.imshow("image", img)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    cv2.line(img, (x+10, y+10), (x-10, y-10), (0, 255, 0), 5)
+    cv2.imshow("image", img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
     return (x, y)
 
 def cd_color_segmentation(img, template=None):
@@ -92,15 +80,31 @@ def cd_color_segmentation(img, template=None):
     # mask = cv2.inRange(hsv, (0, 0, 200), (360, 50, 255))
     # image_print(mask)
     
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) #convert to grayscale
-    threshold = 210 # filters.threshold_otsu(gray)
-    binary = (gray>threshold)
-    skeleton = morphology.skeletonize(binary)
-    cv_skel = img_as_ubyte(skeleton)
-    # image_print(cv_skel)
-    lines = cv2.HoughLines(cv_skel, 10, np.pi/18, 150)
+    blur = cv2.GaussianBlur(img, (3, 3), 1)
+    threshold = 210 
+    # binary = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)[1]
+    cv_skel = cv2.Canny(blur, 0, threshold)
+    image_print(cv_skel)
+    lines = cv2.HoughLines(cv_skel, 1, np.pi/18, threshold = 150)
+    if lines is None:
+        image_print(img)
+        image_print(cv_skel)
+        return None
+    print(len(lines))
+    if len(lines)==1:
+        y = len(img)//3
+        epsilon = np.pi/18
+        x = int(calc_intersection_with_bottom(lines[0][0][0], lines[0][0][1], y, epsilon))
+        cv2.line(img, (x+10, y+10), (x-10, y-10), (0, 255, 0), 5)
+        cv2.imshow("image", img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        return (x, y)
     rhos = np.array([tup[0][0] for tup in lines])
     thetas = np.array([tup[0][1] for tup in lines])
+    if len(lines)==2:
+        x, y = find_intersection(rhos[0], thetas[0], rhos[1], thetas[1])
+        return (x, y)
     x_intersect = []
     epsilon=np.pi/18
     bottom_y = len(img)
@@ -121,5 +125,5 @@ def cd_color_segmentation(img, template=None):
 
 
 
-# img = cv2.imread('/Users/katherinelin/Documents/6.141/racecar_docker/home/racecar_ws/src/final_challenge2023/media/track34.png')
-# cd_color_segmentation(img)
+img = cv2.imread('/Users/katherinelin/Documents/6.141/racecar_docker/home/racecar_ws/src/final_challenge2023/media/track24.png')
+cd_color_segmentation(img)
