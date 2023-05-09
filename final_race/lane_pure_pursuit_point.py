@@ -3,11 +3,11 @@
 import rospy
 import numpy as np
 import time
-import utils
-import tf
 
 import homography_transformer as homography
+import get_lanes as imging
 
+from sensor_msgs.msg import Image
 from geometry_msgs.msg import PoseArray, PoseStamped, PointStamped, Point
 from std_msgs.msg import Float32
 from visualization_msgs.msg import Marker
@@ -19,43 +19,26 @@ class PurePursuit(object):
     """ Implements Pure Pursuit trajectory tracking with a fixed lookahead and speed.
     """
     def __init__(self):
-        self.lane_lines = rospy.Subscriber("/laneLines", PoseArray, self.lane_callback, queue_size = 1 )
-        
+        self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
+
+        self.point = rospy.Subscriber("/laneLines", PoseArray, self.point_callback, queue_size = 1 )
         self.drive_pub = rospy.Publisher("/drive", AckermannDriveStamped, queue_size=1)
-        self.error = rospy.Publisher("/error", Float32, queue_size=1)
+        self.error_pub = rospy.Publisher("/error", Float32, queue_size=1)
 
         self.speed = rospy.get_param("~speed", 1.0)
-        
-        # PID Control Params
-        self.last_time = rospy.get_time()
-        
-        self.proportional = 0.0
-        self.integral = 0.0
-        self.integral_max = 0.5
-        self.derivative = 0.0
-        self.last_error = 0.0
-        self.last_2_error = 0.0
-
-        self.last_angle = 0.0
-
-        # Get transform from map to baselink
-        self.listener = tf.TransformListener()
+        self.lookahead = rospy.get_param("~lookahead", 1.0) #0.5 # FILL IN #
 
         self.update_params()
 
 
 
     def update_params(self):
-        self.kp = rospy.get_param("~kp", 0.4)
-        self.ki = rospy.get_param("~ki", 0.0)
-        self.kd = rospy.get_param("~kd", 0.0)
-        self.lookahead        = rospy.get_param("~lookahead", 1.0) #0.5 # FILL IN #
-        self.speed            = rospy.get_param("~speed", 2.0) # FILL IN #
-        self.lookaheadclose = rospy.get_param("~lookaheadclose", .3)
-        self.lookaheadfarther = rospy.get_param("~lookaheadfarther", .6)
+        self.speed = rospy.get_param("~speed", 0.4)
+        self.lookahead = rospy.get_param("~lookahead", 1.0) #0.5 # FILL IN #
+
         
 
-    def lane_callback(self, laneArray): 
+    def point_callback(self, point): 
         '''
         Inputs: 
             laneArray: A 2xN numpy array of [u,v] coordinates that signify the pixel position of the lanes in ZED camera. 
@@ -66,37 +49,20 @@ class PurePursuit(object):
         Outputs: 
             A drive command to car for it to stay in the lane. 
         '''
+        realPointx, realPointy = imging.cd_color_segmentation(self.image_sub)
+        realPointx, realPointy = homography.transformUvtoXy(realPointx, realPointy)
         #convert each laneArray pixel to car frame  xy coordinate
-        leftLane = laneArray[0, :]
-        rightLane = laneArray[1, :]
 
-        leftLaneCarFrame = np.zeros(leftLane.shape)
-        rightLaneCarFrame = np.zeros(leftLane.shape)
+        steering_angle = min(0.34, np.arctan(abs(realPointy/realPointx)))
+        rospy.logerr("mag of steering angle: " + str(steering_angle))
 
-        for i in leftLane.shape[0]:
-            u = leftLane[i,0]
-            v = leftLane[i,1]
-            x,y = homography.transformUvToXy(u,v)
-            leftLaneCarFrame[i] = np.array([x,y])
-        for i in rightLane.shape[0]:
-            u = rightLane[i,0]
-            v = rightLane[i,1]
-            x,y = homography.transformUvToXy(u,v)
-            rightLaneCarFrame[i] = np.array([x,y])
-
-        #Form of leftLaneCarFrame 
-        # [
-        #     [x,y],
-        #     [x,y],
-        #     [x,y],
-        # ]
-        #Get an array of the middle line between both lanes
-        xMidLine = (leftLaneCarFrame[:,0] + rightLaneCarFrame[:,0])/2
-        yMidLine = (leftLaneCarFrame[:,1] + rightLaneCarFrame[:,1])/2
-        midLine = np.zeros(leftLane.shape)
-        midLine[:,0] = xMidLine
-        midLine[:,1] = yMidLine
-        imin, distmin = self.find_closest_segment(self, 0, 0, midLine) 
+        # apply direction
+        steering_angle *= np.sign(realPointy)
+        
+        drive_cmd = AckermannDriveStamped()
+        drive_cmd.drive.steering_angle = steering_angle
+        drive_cmd.drive.speed = self.speed
+        self.drive_pub.publish(drive_cmd)
 
 
 
@@ -279,39 +245,14 @@ class PurePursuit(object):
 
         return lookaheadPoint, steering_angle
     
-    def pid_control(self, err):
+    def error_pub(self, err):
         # update PID gains from rosparams
         rospy.logerr("YOU ENTER ERROR MY GUY")
         # error = PointStamped() 
         # error.point.x = err 
         # error.header.stamp = rospy.Time.now() 
-        self.error.publish(err) 
+        self.error_pub.publish(err) 
         return err
-
-        # TODO: use pid stuff
-        self.kp = rospy.get_param("~kp")
-        self.ki = rospy.get_param("~ki")
-        self.kd = rospy.get_param("~kd")
-
-        time = rospy.get_time()
-        dt = time - self.last_time
-        
-        self.proportional = self.kp * error
-        if self.integral > self.integral_max:
-            self.integral = self.integral_max
-        if self.integral < -self.integral_max:
-            self.integral = -self.integral_max
-        self.integral += self.ki * error * float(dt)
-        self.derivative = self.kd * (error-self.last_error)/dt
-    
-        self.last_error = error
-        self.last_2_error = self.last_error
-        self.last_time = time
-
-        output = self.proportional + self.integral + self.derivative
-
-        return output
-
 
 
 if __name__=="__main__":
