@@ -8,10 +8,10 @@ from cv_bridge import CvBridge, CvBridgeError
 
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point #geometry_msgs not in CMake file
-from visual_servoing.msg import ConeLocationPixel
+from final_challenge2023.msg import ConeLocationPixel
 
 # import your color segmentation algorithm; call this function in ros_image_callback!
-from color_segmentation import cd_color_segmentation
+import color_segmentation
 
 
 class ConeDetector():
@@ -36,20 +36,26 @@ class ConeDetector():
         # (We know this pixel corresponds to a point on the ground plane)
         # publish this pixel (u, v) to the /relative_cone_px topic; the homography transformer will
         # convert it to the car frame.
-	image = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
+        image = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
         #################################
         # YOUR CODE HERE
         # detect the cone and publish its
         # pixel location in the image.
-	bbox = cd_color_segmentation(image)
-	((x1, y1), (x2, y2)) = bbox
+        use_bbox = False
+        u, v = -1, -1
+        if use_bbox:
+            bbox = color_segmentation.cd_color_segmentation(image)
+            ((x1, y1), (x2, y2)) = bbox
 
-	u = (x1+x2)//2
-	v = y2
-	cone_location = ConeLocationPixel()
-	cone_location.u = u
-	cone_location.v = v
-	self.cone_pub.publish(cone_location)
+            u = (x1+x2)//2
+            v = y2
+        else:
+            u, v = color_segmentation.line_centroid(image)
+            # u, v = color_segmentation.line_farthest_corner(image)
+        cone_location = ConeLocationPixel()
+        cone_location.u = u
+        cone_location.v = v
+        self.cone_pub.publish(cone_location)
         # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
         #################################
         debug_msg = self.bridge.cv2_to_imgmsg(image, "bgr8")

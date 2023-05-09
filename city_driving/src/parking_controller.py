@@ -3,7 +3,7 @@
 import rospy
 import numpy as np
 
-from visual_servoing.msg import ConeLocation, ParkingError
+from final_challenge2023.msg import ConeLocation, ParkingError
 from ackermann_msgs.msg import AckermannDriveStamped
 
 class ParkingController():
@@ -21,11 +21,29 @@ class ParkingController():
             AckermannDriveStamped, queue_size=10)
         self.error_pub = rospy.Publisher("/parking_error",
             ParkingError, queue_size=10)
-
-        self.parking_distance = 0 #.5 # meters; try playing with this number!
+        
         self.relative_x = 0
         self.relative_y = 0
-        self.back_up = False
+
+        # PID Control Params
+        self.last_time = rospy.get_time()
+        self.speed_last_error = 0.0
+        self.angle_last_error = 0.0
+        self.last_speed = 0.0
+        self.last_angle = 0.0
+        self.last_orange = 0 #in nanosecs   
+        
+        self.update_params()
+
+    def update_params(self):
+        self.angleKp = rospy.get_param("~angleKp")
+        self.angleKd = rospy.get_param("~angleKd")
+        self.speedKp = rospy.get_param("~speedKp")
+        self.speedKd = rospy.get_param("~speedKd")
+        self.constantSpeed = rospy.get_param("~constantSpeed")
+        self.cornerSpeed = rospy.get_param("~cornerSpeed")
+        self.parking_distance = rospy.get_param("~parkingDistance")
+        self.timeout = rospy.get_param("~timeout")
 
     def relative_cone_callback(self, msg):
         self.relative_x = msg.x_pos
@@ -35,49 +53,67 @@ class ParkingController():
 
         # YOUR CODE HERE
         # Use relative position and your control law to set drive_cmd
-        angle_divider = 1 #0.75
-        
-        steering_angle = np.sign(self.relative_y)*np.arctan(abs(self.relative_y/self.relative_x))
+        self.update_params()
+
+        angle_error = np.sign(self.relative_y)*np.arctan(abs(self.relative_y/self.relative_x))
         self.curr_dist = np.sqrt(self.relative_y**2 + self.relative_x**2)
-        distance_error = self.curr_dist - self.parking_distance
-        speed = 1.5*(self.relative_x - self.parking_distance)
-	
-
-        use_backup = False 
-        if use_backup:
-            if self.back_up:
-                #    stopping backing up if far enough to finish turning
-                if distance_error > 0.25*self.parking_distance:
-                    self.back_up = False
-                else:
-                    speed = -0.3
-
-            if not self.back_up:
-
-                #    if too close, back up
-                if abs(steering_angle) > 0.05 and abs(distance_error) < 0.05:
-		    print("start backing up")
-                    self.back_up = True
-                    speed = -0.3
-
-
-            # limit speed to 1 m/s
+        distance_error = self.relative_x - self.parking_distance
+        speed, steering_angle = self.pid_control(distance_error, angle_error)
+    
+        # limit speed to 1 m/s
         speed = np.sign(speed)*min(1, abs(speed))
-	
-	# if speed too small, car doesn't move
-	if speed > -0.19 and speed < -0.03:
-		speed = -0.19
-	if speed > 0.03 and speed < 0.19:
-		speed = 0.19
-	
-	steering_angle *= np.sign(speed)
-	print("speed: ", speed, " angle: ", steering_angle)
-        drive_cmd.drive.steering_angle = steering_angle
-        drive_cmd.drive.speed = speed
 
-        #################################
-        self.drive_pub.publish(drive_cmd)
-        self.error_publisher()
+        # check if we should use constant speed:
+        if self.constantSpeed > 0.0:
+            speed = self.constantSpeed
+    
+            # if above max steering angle, slow down
+            if abs(steering_angle) > 0.34: 
+                speed = self.cornerSpeed
+
+        # if speed too small, car doesn't move
+        if speed > -0.19 and speed < -0.03:
+            speed = -0.19
+        if speed > 0.03 and speed < 0.19:
+            speed = 0.19
+    
+        # speed should always be positive
+        
+        steering_angle *= np.sign(speed)
+        print("speed: ", speed, " angle: ", steering_angle)
+        if speed > 0:
+            drive_cmd.drive.steering_angle = steering_angle
+            drive_cmd.drive.speed = speed
+            self.last_speed, self.last_angle = speed, steering_angle
+            self.last_orange = rospy.get_rostime().nsecs # in nanoseconds
+            self.drive_pub.publish(drive_cmd)
+            self.error_publisher()
+        else:
+            if rospy.get_rostime().nsecs - self.last_orange < self.timeout:
+                print("using last drive command!!!!!!!!!!!!")
+                drive_cmd.drive.steering_angle = self.last_angle
+                drive_cmd.drive.speed = self.last_speed
+
+                self.drive_pub.publish(drive_cmd)
+
+
+
+    def pid_control(self, speed_error, angle_error):
+        # update PID gains from rosparams
+
+        time = rospy.get_time()
+        dt = time - self.last_time
+
+        speed_output = self.speedKp * speed_error + self.speedKd*(speed_error - self.speed_last_error)/dt
+        angle_output = self.angleKp * angle_error + self.angleKd*(angle_error - self.angle_last_error)/dt
+
+        # update for next iteration
+        self.speed_last_error = speed_error
+        self.angle_last_error = angle_error
+        self.last_time = time
+
+        return speed_output, angle_output
+    
 
     def error_publisher(self):
         """

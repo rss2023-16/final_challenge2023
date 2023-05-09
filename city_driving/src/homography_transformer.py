@@ -10,7 +10,7 @@ from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from ackermann_msgs.msg import AckermannDriveStamped
 from visualization_msgs.msg import Marker
-from visual_servoing.msg import ConeLocation, ConeLocationPixel
+from final_challenge2023.msg import ConeLocation, ConeLocationPixel
 from geometry_msgs.msg import Point
 
 #The following collection of pixel locations and corresponding relative

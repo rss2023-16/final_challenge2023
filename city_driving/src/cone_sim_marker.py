@@ -6,7 +6,7 @@ import numpy as np
 import tf
 from tf.transformations import euler_from_quaternion
 
-from visual_servoing.msg import ConeLocation
+from final_challenge2023.msg import ConeLocation
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import PointStamped
 
