@@ -7,7 +7,9 @@ import utils
 import tf
 
 import homography_transformer as homography
+import get_lanes as imging
 
+from sensor_msgs.msg import Image
 from geometry_msgs.msg import PoseArray, PoseStamped, PointStamped, Point
 from std_msgs.msg import Float32
 from visualization_msgs.msg import Marker
@@ -19,6 +21,8 @@ class PurePursuit(object):
     """ Implements Pure Pursuit trajectory tracking with a fixed lookahead and speed.
     """
     def __init__(self):
+        self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
+
         self.point = rospy.Subscriber("/laneLines", PoseArray, self.point_callback, queue_size = 1 )
         self.drive_pub = rospy.Publisher("/drive", AckermannDriveStamped, queue_size=1)
         self.error_pub = rospy.Publisher("/error", Float32, queue_size=1)
@@ -47,7 +51,8 @@ class PurePursuit(object):
         Outputs: 
             A drive command to car for it to stay in the lane. 
         '''
-        realPointx, realPointy = homography.transformUvtoXy(point[0],point[1])
+        realPointx, realPointy = imging.cd_color_segmentation(self.image_sub)
+        realPointx, realPointy = homography.transformUvtoXy(realPointx, realPointy)
         #convert each laneArray pixel to car frame  xy coordinate
 
         steering_angle = min(0.34, np.arctan(abs(realPointy/realPointx)))

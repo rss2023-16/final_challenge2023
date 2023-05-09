@@ -97,7 +97,7 @@ def cd_color_segmentation(img, template=None):
     binary = (gray>threshold)
     skeleton = morphology.skeletonize(binary)
     cv_skel = img_as_ubyte(skeleton)
-    image_print(cv_skel)
+    # image_print(cv_skel)
     lines = cv2.HoughLines(cv_skel, 10, np.pi/18, 150)
     rhos = np.array([tup[0][0] for tup in lines])
     thetas = np.array([tup[0][1] for tup in lines])
@@ -121,5 +121,5 @@ def cd_color_segmentation(img, template=None):
 
 
 
-img = cv2.imread('/Users/katherinelin/Documents/6.141/racecar_docker/home/racecar_ws/src/final_challenge2023/media/track34.png')
-cd_color_segmentation(img)
+# img = cv2.imread('/Users/katherinelin/Documents/6.141/racecar_docker/home/racecar_ws/src/final_challenge2023/media/track34.png')
+# cd_color_segmentation(img)
