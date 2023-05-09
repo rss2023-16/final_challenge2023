@@ -3,8 +3,6 @@
 import rospy
 import numpy as np
 import time
-import utils
-import tf
 
 import homography_transformer as homography
 

@@ -1,7 +1,4 @@
 <launch>
-  <!-- Listen to messages from joysicks -->
-  <node pkg="joy" name="joy_node" type="joy_node"/>
-
   <!-- Begin the simulator with the parameters from params.yaml -->
 
   <node pkg="final_challenge2023" name="lane_pure_pursuit_point" type="lane_pure_pursuit_point.py" output="screen">
