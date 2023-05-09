@@ -10,7 +10,7 @@ from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from ackermann_msgs.msg import AckermannDriveStamped
 from visualization_msgs.msg import Marker
-from visual_servoing.msg import ConeLocation, ConeLocationPixel
+# from visual_servoing.msg import ConeLocation, ConeLocationPixel
 from geometry_msgs.msg import Point
 
 #The following collection of pixel locations and corresponding relative
@@ -72,8 +72,8 @@ METERS_PER_INCH = 0.0254
 
 class HomographyTransformer:
     def __init__(self):
-        self.cone_px_sub = rospy.Subscriber("/relative_cone_px", ConeLocationPixel, self.cone_detection_callback)
-        self.cone_pub = rospy.Publisher("/relative_cone", ConeLocation, queue_size=10)
+        # self.cone_px_sub = rospy.Subscriber("/relative_cone_px", ConeLocationPixel, self.cone_detection_callback)
+        # self.cone_pub = rospy.Publisher("/relative_cone", ConeLocation, queue_size=10)
         self.click_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color_mouse_left", Point, self.cone_detection_callback)
         self.marker_pub = rospy.Publisher("/cone_marker",
             Marker, queue_size=1)
@@ -120,7 +120,7 @@ class HomographyTransformer:
         relative_xy_msg.x_pos = x
         relative_xy_msg.y_pos = y
 
-        self.cone_pub.publish(relative_xy_msg)
+        # self.cone_pub.publish(relative_xy_msg)
 
 
     def transformUvToXy(self, u, v):
