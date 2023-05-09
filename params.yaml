@@ -1,0 +1,12 @@
+angleKp: 2.0
+angleKd: 0.0
+speedKp: 1.0
+speedKd: 0.0
+constantSpeed: 0.6
+cornerSpeed: 0.2
+parkingDistance: 0.05
+hue_min: 10
+hue_max: 30
+saturation: 100
+value: 150
+timeout: 5000
