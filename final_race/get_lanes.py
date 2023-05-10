@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import pdb
+import rospy
 
 #################### X-Y CONVENTIONS #########################
 # 0,0  X  > > > > >
@@ -91,7 +92,7 @@ def cd_color_segmentation(img, template=None):
     # hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     # mask = cv2.inRange(hsv, (0, 0, 200), (360, 50, 255))
     # image_print(mask)
-    
+    rospy.loginfo("Starting img processing inside get_lanes")
     blur = cv2.GaussianBlur(img, (3, 3), 1)
     threshold = 210 
     # binary = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)[1]
@@ -131,6 +132,7 @@ def cd_color_segmentation(img, template=None):
     rho2 = rhos[idx[1]]
     theta2 = thetas[idx[1]]
     x, y = find_intersection(rho1, theta1, rho2, theta2)
+    rospy.loginfo("finishing img processing inside get_lanes")
     return (x, y)
 
 
