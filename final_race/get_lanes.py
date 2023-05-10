@@ -105,8 +105,8 @@ def show_lanes(rho1, theta1, rho2, theta2, img):
     return img
 
 def cd_color_segmentation(img, template=None):
-    best_left_dist = 1000
-    best_right_dist = 1000
+    best_left_dist = np.inf
+    best_right_dist = np.inf
     right_rho, right_theta, left_rho, left_theta = 0, 0, 0, 0
     # hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     # mask = cv2.inRange(hsv, (0, 0, 200), (360, 50, 255))
@@ -133,9 +133,9 @@ def cd_color_segmentation(img, template=None):
         return x, y, lines[0][0][0], lines[0][0][1], lines[0][0][0], lines[0][0][1]
     rhos = np.array([tup[0][0] for tup in lines])
     thetas = np.array([tup[0][1] for tup in lines])
-    if len(lines)==2:
-        x, y = find_intersection(rhos[0], thetas[0], rhos[1], thetas[1])
-        return x, y, rhos[0], thetas[0], rhos[1], thetas[1]
+    # if len(lines)==2:
+    #     x, y = find_intersection(rhos[0], thetas[0], rhos[1], thetas[1])
+    #     return x, y, rhos[0], thetas[0], rhos[1], thetas[1]
     x_intersect = []
     epsilon=np.pi/18
     bottom_y = len(img)
@@ -169,6 +169,29 @@ def cd_color_segmentation(img, template=None):
     rospy.loginfo("finishing img processing inside get_lanes")
     # return x, y, rho1, theta1, rho2, theta2
 
+    # didn't find any good lines
+    if best_right_dist == np.inf and best_left_dist == np.inf:
+        return None
+    if best_right_dist == np.inf:
+        # just use left 
+        y = len(img)//3
+        epsilon = np.pi/18
+        x = int(calc_intersection_with_bottom(left_rho, left_theta, y, epsilon))
+        # cv2.line(img, (x+10, y+10), (x-10, y-10), (0, 255, 0), 5)
+        # cv2.imshow("image", img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+        return x, y, left_rho, left_theta, left_rho, left_theta
+    if best_left_dist == np.inf:
+        # just use left 
+        y = len(img)//3
+        epsilon = np.pi/18
+        x = int(calc_intersection_with_bottom(right_rho, right_theta, y, epsilon))
+        # cv2.line(img, (x+10, y+10), (x-10, y-10), (0, 255, 0), 5)
+        # cv2.imshow("image", img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+        return x, y, right_rho, right_theta, right_rho, right_theta
     return x, y, left_rho, left_theta, right_rho, right_theta
 
 
