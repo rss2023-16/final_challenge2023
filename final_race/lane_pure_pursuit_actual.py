@@ -22,6 +22,8 @@ class PurePursuit(object):
     """
     def __init__(self):
         rospy.loginfo("Pure pursuit obj initialized!")
+        self.bridge = CvBridge()
+        
         self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
 
         self.drive_pub = rospy.Publisher("/drive", AckermannDriveStamped, queue_size=1)
