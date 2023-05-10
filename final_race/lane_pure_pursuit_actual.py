@@ -60,8 +60,7 @@ class PurePursuit(object):
         Outputs: 
             A drive command to car for it to stay in the lane. 
         '''
-        self.update_params()
-
+	self.update_params()
         #Create Drive Command# 
         drive_cmd = AckermannDriveStamped()
 
@@ -77,10 +76,10 @@ class PurePursuit(object):
             return 
         
         realPointx, realPointy, rho1, theta1, rho2, theta2 = lookaheadPoint
-
+	print(realPointx, realPointy, "I am pixel coords")
         # rospy.loginfo("grabbed imagepointX and Y")
         realPointx, realPointy = self.transformUvToXy(realPointx, realPointy)
-
+	print(realPointx,realPointy, "I AM REAL X AND Y IN CAR FRAME")
         self.steering_angle = np.arctan(abs(realPointy/realPointx))
         # rospy.logerr("mag of steering angle: " + str(steering_angle))
         insideArcTan = 2*self.wheelbase_length*np.sin(self.steering_angle)/self.lookahead
@@ -92,8 +91,8 @@ class PurePursuit(object):
 
         drive_cmd.drive.steering_angle = self.steering_angle
         drive_cmd.drive.speed = self.speed
-        rospy.loginfo("About to publish steering cmds")
-        rospy.loginfo(drive_cmd)
+        #rospy.loginfo("About to publish steering cmds")
+        #rospy.loginfo(drive_cmd)
         self.drive_pub.publish(drive_cmd)
         self.prev_steering_angle = self.steering_angle
         

@@ -142,7 +142,7 @@ def cd_color_segmentation(img, template=None):
     for i in range(len(lines)):
         rho = rhos[i]
         theta = thetas[i]
-        intersect = calc_intersection_with_bottom(rho, theta, bottom_y, epsilon))
+        intersect = calc_intersection_with_bottom(rho, theta, bottom_y, epsilon)
         x_intersect.append(intersect)
         dist_center = len(img[0])//2-intersect
         dist = abs(dist_center)
