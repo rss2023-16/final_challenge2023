@@ -39,7 +39,7 @@ class PurePursuit(object):
         self.h = np.array([[-6.17702706e-05,  1.99202338e-04, -4.35124244e-01], 
                            [ 1.21539529e-03, -2.65671832e-05, -4.01352071e-01],
                            [-8.38281951e-05, -6.51686963e-03,  1.00000000e+00]])
-
+        self.prev_steering_angle = 0
         self.update_params()
 
 
@@ -60,29 +60,39 @@ class PurePursuit(object):
         Outputs: 
             A drive command to car for it to stay in the lane. 
         '''
+        #Create Drive Command# 
+        drive_cmd = AckermannDriveStamped()
+
         # rospy.loginfo("Going into callback")
         img = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
 
-        realPointx, realPointy = imging.cd_color_segmentation(img)
-        rospy.loginfo(realPointx, realPointy)
+        lookaheadPoint = imging.cd_color_segmentation(img)
+        if lookaheadPoint == None: 
+            drive_cmd.drive.steering_angle = self.prev_steering_angle
+            drive_cmd.drive.speed = self.speed
+            rospy.loginfo("Could not find lookaheadPoint. Publishing previous steering cmd.")
+            self.drive_pub.publish(drive_cmd)
+            return 
+        
         # rospy.loginfo("grabbed imagepointX and Y")
         realPointx, realPointy = self.transformUvToXy(realPointx, realPointy)
 
-        steering_angle = np.arctan(abs(realPointy/realPointx))
+        self.steering_angle = np.arctan(abs(realPointy/realPointx))
         # rospy.logerr("mag of steering angle: " + str(steering_angle))
-        insideArcTan = 2*self.wheelbase_length*np.sin(steering_angle)/self.lookahead
+        insideArcTan = 2*self.wheelbase_length*np.sin(self.steering_angle)/self.lookahead
 
         # apply direction
-        steering_angle = np.arctan(insideArcTan)
+        self.steering_angle = np.arctan(insideArcTan)
 
-        steering_angle *= np.sign(realPointy)
+        self.steering_angle *= np.sign(realPointy)
 
-        drive_cmd = AckermannDriveStamped()
-        drive_cmd.drive.steering_angle = steering_angle
+        drive_cmd.drive.steering_angle = self.steering_angle
         drive_cmd.drive.speed = self.speed
         rospy.loginfo("About to publish steering cmds")
         rospy.loginfo(drive_cmd)
         self.drive_pub.publish(drive_cmd)
+        self.prev_steering_angle = self.steering_angle
+        
         img = cv2.rectangle(img, (realPointx-1, realPointy-1), (realPointx+1, realPointy+1), (0, 255, 0), 2)
         # img = cv2.line(img, (realPointx-1, realPointy-1), (realPointx+1, realPointy+1), (0, 255, 0), 2)
         debug_msg = self.bridge.cv2_to_imgmsg(img, "bgr8")
