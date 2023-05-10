@@ -4,7 +4,6 @@ import rospy
 import numpy as np
 import time
 
-import homography_transformer as homography
 import get_lanes as imging
 
 import cv2
@@ -32,9 +31,12 @@ class PurePursuit(object):
         self.wheelbase_length = 0.325
         self.speed = rospy.get_param("~speed", 1.0)
         self.lookahead = rospy.get_param("~lookahead", 1.0) #0.5 # FILL IN #
+        
+        self.h = np.array([[-6.17702706e-05,  1.99202338e-04, -4.35124244e-01], 
+                           [ 1.21539529e-03, -2.65671832e-05, -4.01352071e-01],
+                           [-8.38281951e-05, -6.51686963e-03,  1.00000000e+00]])
 
         self.update_params()
-
 
 
     def update_params(self):
@@ -59,7 +61,7 @@ class PurePursuit(object):
 
         realPointx, realPointy = imging.cd_color_segmentation(img)
         rospy.loginfo("grabbed imagepointX and Y")
-        realPointx, realPointy = homography.transformUvToXy(realPointx, realPointy)
+        realPointx, realPointy = self.transformUvToXy(realPointx, realPointy)
 
         steering_angle = np.arctan(abs(realPointy/realPointx))
         # rospy.logerr("mag of steering angle: " + str(steering_angle))
@@ -76,7 +78,26 @@ class PurePursuit(object):
         rospy.loginfo("About to publish steering cmds")
         self.drive_pub.publish(drive_cmd)
 
+    def transformUvToXy(self, u, v):
+        """
+        u and v are pixel coordinates.
+        The top left pixel is the origin, u axis increases to right, and v axis
+        increases down.
 
+        Returns a normal non-np 1x2 matrix of xy displacement vector from the
+        camera to the point on the ground plane.
+        Camera points along positive x axis and y axis increases to the left of
+        the camera.
+
+        Units are in meters.
+        """
+        homogeneous_point = np.array([[u], [v], [1]])
+        xy = np.dot(self.h, homogeneous_point)
+        scaling_factor = 1.0 / xy[2, 0]
+        homogeneous_xy = xy * scaling_factor
+        x = homogeneous_xy[0, 0]
+        y = homogeneous_xy[1, 0]
+        return x, y
 
 
 
