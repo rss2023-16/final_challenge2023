@@ -142,7 +142,7 @@ def cd_color_segmentation(img, template=None):
         theta = thetas[i]
         x_intersect.append(calc_intersection_with_bottom(rho, theta, bottom_y, epsilon))
     x_intersect = np.array(x_intersect)
-    dist_center = len(img[0])//2-x_intersect
+    dist_center = np.abs(len(img[0])//2-x_intersect)
     # positives, negatives = np.where(dist_center>0, dist_center)
     # pos_idx = 
     idx = np.argpartition(dist_center, 2)[:2]
