@@ -60,6 +60,8 @@ class PurePursuit(object):
         Outputs: 
             A drive command to car for it to stay in the lane. 
         '''
+        self.update_params()
+
         #Create Drive Command# 
         drive_cmd = AckermannDriveStamped()
 
@@ -115,6 +117,8 @@ class PurePursuit(object):
         Units are in meters.
         """
         homogeneous_point = np.array([[u], [v], [1]])
+        print(self.h, "I am self.h")
+        print(self.h.shape, "I am h shape")
         xy = np.dot(self.h, homogeneous_point)
         scaling_factor = 1.0 / xy[2, 0]
         homogeneous_xy = xy * scaling_factor
