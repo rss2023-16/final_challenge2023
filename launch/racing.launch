@@ -1,7 +1,7 @@
 <launch>
   <!-- Begin the simulator with the parameters from params.yaml -->
 
-  <node pkg="final_challenge2023" name="lane_pure_pursuit_point" type="lane_pure_pursuit_point.py" output="screen">
+  <node pkg="final_challenge2023" name="lane_pure_pursuit_actual" type="lane_pure_pursuit_actual.py" output="screen">
     <rosparam command="load" file="$(find final_challenge2023)/racingParams.yaml"/>
   </node>
 </launch>
