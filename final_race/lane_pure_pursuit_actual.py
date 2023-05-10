@@ -22,7 +22,7 @@ class PurePursuit(object):
     def __init__(self):
         rospy.loginfo("Pure pursuit obj initialized!")
 
-        self.drive = rospy.get_param("~drive")
+        self.drive = rospy.get_param("~drive_topic")
 
         self.bridge = CvBridge()
 
@@ -30,7 +30,7 @@ class PurePursuit(object):
 
         self.drive_pub = rospy.Publisher(self.drive, AckermannDriveStamped, queue_size=1)
         self.error_pub = rospy.Publisher("/error", Float32, queue_size=1)
-
+        self.debug_pub = rospy.Publisher("/cone_debug_img", Image, queue_size=10)
         self.wheelbase_length = 0.325
         self.speed = rospy.get_param("~speed", 1.0)
 
@@ -64,6 +64,7 @@ class PurePursuit(object):
         img = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
 
         realPointx, realPointy = imging.cd_color_segmentation(img)
+        rospy.loginfo(realPointx, realPointy)
         # rospy.loginfo("grabbed imagepointX and Y")
         realPointx, realPointy = self.transformUvToXy(realPointx, realPointy)
 
@@ -82,6 +83,9 @@ class PurePursuit(object):
         rospy.loginfo("About to publish steering cmds")
         rospy.loginfo(drive_cmd)
         self.drive_pub.publish(drive_cmd)
+        img = cv2.rectangle(img, (realPointx-1, realPointy-1), (realPointx+1, realPointy+1), (0, 255, 0), 2)
+        debug_msg = self.bridge.cv2_to_imgmsg(img, "bgr8")
+        self.debug_pub.publish(debug_msg)
 
     def transformUvToXy(self, u, v):
         """
