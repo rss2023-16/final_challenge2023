@@ -84,6 +84,7 @@ class PurePursuit(object):
         rospy.loginfo(drive_cmd)
         self.drive_pub.publish(drive_cmd)
         img = cv2.rectangle(img, (realPointx-1, realPointy-1), (realPointx+1, realPointy+1), (0, 255, 0), 2)
+        # img = cv2.line(img, (realPointx-1, realPointy-1), (realPointx+1, realPointy+1), (0, 255, 0), 2)
         debug_msg = self.bridge.cv2_to_imgmsg(img, "bgr8")
         self.debug_pub.publish(debug_msg)
 
