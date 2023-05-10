@@ -77,17 +77,34 @@ def find_intersection(rho1, theta1, rho2, theta2):
     # cv2.destroyAllWindows()
     return (x, y)
 
+def show_lanes(rho1, theta1, rho2, theta2, img):
+    a1 = np.cos(theta1)
+    b1 = np.sin(theta1)
+    x1 = a1*rho1
+    y1 = b1*rho1
+    a2 = np.cos(theta2)
+    b2 = np.sin(theta2)
+    x2 = a2*rho2
+    y2 = b2*rho2
+    
+    x11 = int(x1 + 1000*(-b1))
+    y11 = int(y1 + 1000*(a1))
+    x21 = int(x1 - 1000*(-b1))
+    y21 = int(y1 - 1000*(a1))
+    img = cv2.line(img, (x11, y11), (x21, y21), (0, 0, 255), 2)
+
+    x12 = int(x2 + 1000*(-b2))
+    y12 = int(y2 + 1000*(a2))
+    x22 = int(x2 - 1000*(-b2))
+    y22 = int(y2 - 1000*(a2))
+    img = cv2.line(img, (x12, y12), (x22, y22), (0, 0, 255), 2)
+
+    # cv2.imshow("image", img)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    return img
+
 def cd_color_segmentation(img, template=None):
-    """
-    Implement the cone detection using color segmentation algorithm
-    Input:
-        img: np.3darray; the input image with a cone to be detected. BGR.
-        template_file_path; Not required, but can optionally be used to automate setting hue filter values.
-    Return:
-        bbox: ((x1, y1), (x2, y2)); the bounding box of the cone, unit in px
-                (x1, y1) is the top left of the bbox and (x2, y2) is the bottom right of the bbox
-    """
-#   image_print(img)
 
     # hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     # mask = cv2.inRange(hsv, (0, 0, 200), (360, 50, 255))
@@ -111,12 +128,12 @@ def cd_color_segmentation(img, template=None):
         # cv2.imshow("image", img)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
-        return (x, y)
+        return x, y, lines[0][0][0], lines[0][0][1], lines[0][0][0], lines[0][0][1]
     rhos = np.array([tup[0][0] for tup in lines])
     thetas = np.array([tup[0][1] for tup in lines])
     if len(lines)==2:
         x, y = find_intersection(rhos[0], thetas[0], rhos[1], thetas[1])
-        return (x, y)
+        return x, y, rhos[0], thetas[0], rhos[1], thetas[1]
     x_intersect = []
     epsilon=np.pi/18
     bottom_y = len(img)
@@ -133,7 +150,7 @@ def cd_color_segmentation(img, template=None):
     theta2 = thetas[idx[1]]
     x, y = find_intersection(rho1, theta1, rho2, theta2)
     rospy.loginfo("finishing img processing inside get_lanes")
-    return (x, y)
+    return x, y, rho1, theta1, rho2, theta2
 
 
 
