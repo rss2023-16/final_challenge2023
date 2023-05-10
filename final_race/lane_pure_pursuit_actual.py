@@ -66,7 +66,6 @@ class PurePursuit(object):
         # rospy.loginfo("Going into callback")
         img = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
 
-<<<<<<< HEAD
         lookaheadPoint = imging.cd_color_segmentation(img)
         if lookaheadPoint == None: 
             drive_cmd.drive.steering_angle = self.prev_steering_angle
@@ -75,10 +74,6 @@ class PurePursuit(object):
             self.drive_pub.publish(drive_cmd)
             return 
         
-=======
-        realPointx, realPointy = imging.cd_color_segmentation(img)
-        rospy.loginfo(realPointx, realPointy)
->>>>>>> 73b40f709bd7913d04c905c65ef053334a5bf99f
         # rospy.loginfo("grabbed imagepointX and Y")
         realPointx, realPointy = self.transformUvToXy(realPointx, realPointy)
 
@@ -96,14 +91,12 @@ class PurePursuit(object):
         rospy.loginfo("About to publish steering cmds")
         rospy.loginfo(drive_cmd)
         self.drive_pub.publish(drive_cmd)
-<<<<<<< HEAD
         self.prev_steering_angle = self.steering_angle
-=======
+        
         img = cv2.rectangle(img, (realPointx-1, realPointy-1), (realPointx+1, realPointy+1), (0, 255, 0), 2)
         # img = cv2.line(img, (realPointx-1, realPointy-1), (realPointx+1, realPointy+1), (0, 255, 0), 2)
         debug_msg = self.bridge.cv2_to_imgmsg(img, "bgr8")
         self.debug_pub.publish(debug_msg)
->>>>>>> 73b40f709bd7913d04c905c65ef053334a5bf99f
 
     def transformUvToXy(self, u, v):
         """
