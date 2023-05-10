@@ -93,9 +93,6 @@ class HomographyTransformer:
         np_pts_image = np.float32(np_pts_image[:, np.newaxis, :])
 
         self.h, err = cv2.findHomography(np_pts_image, np_pts_ground)
-        rospy.loginfo("printing self.h")
-        rospy.loginfo(self.h)
-
 
     def cone_detection_callback(self, msg):
         #Extract information from message
