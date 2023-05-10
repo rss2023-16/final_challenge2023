@@ -1,7 +1,8 @@
 <launch>
   <!-- Begin the simulator with the parameters from params.yaml -->
+  <node pkg="final_challenge2023" name="homography_transformer" type="homography_transformer.py" output="screen"> </node>
 
-  <node pkg="final_challenge2023" name="lane_pure_pursuit_actual" type="lane_pure_pursuit_actual.py" output="screen">
-    <rosparam command="load" file="$(find final_challenge2023)/racingParams.yaml"/>
-  </node>
+  <!-- <node pkg="final_challenge2023" name="lane_pure_pursuit_actual" type="lane_pure_pursuit_actual.py" output="screen"> -->
+    <!-- <rosparam command="load" file="$(find final_challenge2023)/racingParams.yaml"/>
+  </node> -->
 </launch>
