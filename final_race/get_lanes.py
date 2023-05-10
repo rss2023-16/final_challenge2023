@@ -105,7 +105,9 @@ def show_lanes(rho1, theta1, rho2, theta2, img):
     return img
 
 def cd_color_segmentation(img, template=None):
-
+    best_left_dist = 1000
+    best_right_dist = 1000
+    right_rho, right_theta, left_rho, left_theta = 0, 0, 0, 0
     # hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     # mask = cv2.inRange(hsv, (0, 0, 200), (360, 50, 255))
     # image_print(mask)
@@ -140,19 +142,34 @@ def cd_color_segmentation(img, template=None):
     for i in range(len(lines)):
         rho = rhos[i]
         theta = thetas[i]
-        x_intersect.append(calc_intersection_with_bottom(rho, theta, bottom_y, epsilon))
-    x_intersect = np.array(x_intersect)
-    dist_center = np.abs(len(img[0])//2-x_intersect)
+        intersect = calc_intersection_with_bottom(rho, theta, bottom_y, epsilon))
+        x_intersect.append(intersect)
+        dist_center = len(img[0])//2-intersect
+        dist = abs(dist_center)
+        if dist_center > 0: # right
+            if dist < best_right_dist:
+                right_rho, right_theta = rho, theta
+                best_right_dist = dist
+        else:
+            if dist < best_left_dist:
+                left_rho, left_theta = rho, theta
+                best_left_dist = dist
+
+    # x_intersect = np.array(x_intersect)
+    # dist_center = np.abs(len(img[0])//2-x_intersect)
     # positives, negatives = np.where(dist_center>0, dist_center)
     # pos_idx = 
-    idx = np.argpartition(dist_center, 2)[:2]
-    rho1 = rhos[idx[0]]
-    theta1 = thetas[idx[0]]
-    rho2 = rhos[idx[1]]
-    theta2 = thetas[idx[1]]
-    x, y = find_intersection(rho1, theta1, rho2, theta2)
+    # idx = np.argpartition(dist_center, 2)[:2]
+    # rho1 = rhos[idx[0]]
+    # theta1 = thetas[idx[0]]
+    # rho2 = rhos[idx[1]]
+    # theta2 = thetas[idx[1]]
+    # x, y = find_intersection(rho1, theta1, rho2, theta2)
+    x, y = find_intersection(left_rho, left_theta, right_rho, right_theta)
     rospy.loginfo("finishing img processing inside get_lanes")
-    return x, y, rho1, theta1, rho2, theta2
+    # return x, y, rho1, theta1, rho2, theta2
+
+    return x, y, left_rho, left_theta, right_rho, right_theta
 
 
 
