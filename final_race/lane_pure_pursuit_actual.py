@@ -60,12 +60,17 @@ class PurePursuit(object):
         Outputs: 
             A drive command to car for it to stay in the lane. 
         '''
-	self.update_params()
+	    self.update_params()
         #Create Drive Command# 
         drive_cmd = AckermannDriveStamped()
 
         # rospy.loginfo("Going into callback")
         img = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
+        print(len(img), len(img[0]))
+        imgLenX = len(img[0])
+        imgLenY = len(img)
+        bottomMidY = imgLenY
+        bottomMidX = imgLenX/2
 
         lookaheadPoint = imging.cd_color_segmentation(img)
         if lookaheadPoint == None: 
@@ -76,10 +81,15 @@ class PurePursuit(object):
             return 
         
         realPointx, realPointy, rho1, theta1, rho2, theta2 = lookaheadPoint
-	print(realPointx, realPointy, "I am pixel coords")
+        m = (realPointy-bottomMidY)/(realPointx-bottomMidX)
+        b = realPointy -m*realPointx
+        newX = (bottomMidX + realPointx)/2
+        newY = m*newX + b
+	    print(realPointx, realPointy, "I am pixel coords")
+        print(newX,newY,"I am newx and y")
         # rospy.loginfo("grabbed imagepointX and Y")
-        realPointx, realPointy = self.transformUvToXy(realPointx, realPointy)
-	print(realPointx,realPointy, "I AM REAL X AND Y IN CAR FRAME")
+        realPointx, realPointy = self.transformUvToXy(newX, newY)
+	    print(realPointx,realPointy, "I AM REAL X AND Y IN CAR FRAME")
         self.steering_angle = np.arctan(abs(realPointy/realPointx))
         # rospy.logerr("mag of steering angle: " + str(steering_angle))
         insideArcTan = 2*self.wheelbase_length*np.sin(self.steering_angle)/self.lookahead
