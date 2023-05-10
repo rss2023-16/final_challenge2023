@@ -142,6 +142,7 @@ class HomographyTransformer:
 
         Units are in meters.
         """
+	print(self.h)
         homogeneous_point = np.array([[u], [v], [1]])
         xy = np.dot(self.h, homogeneous_point)
         scaling_factor = 1.0 / xy[2, 0]

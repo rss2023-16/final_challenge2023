@@ -45,7 +45,7 @@ class ConeDetector():
         use_bbox = True
         u, v = -1, -1
         if use_bbox:
-            bbox = color_segmentation.cd_color_segmentation(image)
+            bbox = ((1, 2), (3, 4)) #color_segmentation.cd_color_segmentation(image)
 
             if bbox is None:
                 u, v = 0, 0
