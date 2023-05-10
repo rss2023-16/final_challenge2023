@@ -4,5 +4,7 @@
 
   <node pkg="final_challenge2023" name="lane_pure_pursuit_actual" type="lane_pure_pursuit_actual.py" output="screen"> 
      <rosparam command="load" file="$(find final_challenge2023)/racingParams.yaml"/>
+     <param name="drive_topic" value="/vesc/ackermann_cmd_mux/input/navigation" />
+
   </node>
 </launch>

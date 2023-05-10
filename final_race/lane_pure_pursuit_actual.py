@@ -21,15 +21,19 @@ class PurePursuit(object):
     """
     def __init__(self):
         rospy.loginfo("Pure pursuit obj initialized!")
+
+        self.drive = rospy.get_param("~drive")
+
         self.bridge = CvBridge()
 
         self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
 
-        self.drive_pub = rospy.Publisher("/drive", AckermannDriveStamped, queue_size=1)
+        self.drive_pub = rospy.Publisher(self.drive, AckermannDriveStamped, queue_size=1)
         self.error_pub = rospy.Publisher("/error", Float32, queue_size=1)
 
         self.wheelbase_length = 0.325
         self.speed = rospy.get_param("~speed", 1.0)
+
         self.lookahead = rospy.get_param("~lookahead", 1.0) #0.5 # FILL IN #
         
         self.h = np.array([[-6.17702706e-05,  1.99202338e-04, -4.35124244e-01], 
@@ -56,11 +60,11 @@ class PurePursuit(object):
         Outputs: 
             A drive command to car for it to stay in the lane. 
         '''
-        rospy.loginfo("Going into callback")
+        # rospy.loginfo("Going into callback")
         img = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
 
         realPointx, realPointy = imging.cd_color_segmentation(img)
-        rospy.loginfo("grabbed imagepointX and Y")
+        # rospy.loginfo("grabbed imagepointX and Y")
         realPointx, realPointy = self.transformUvToXy(realPointx, realPointy)
 
         steering_angle = np.arctan(abs(realPointy/realPointx))
@@ -76,6 +80,7 @@ class PurePursuit(object):
         drive_cmd.drive.steering_angle = steering_angle
         drive_cmd.drive.speed = self.speed
         rospy.loginfo("About to publish steering cmds")
+        rospy.loginfo(drive_cmd)
         self.drive_pub.publish(drive_cmd)
 
     def transformUvToXy(self, u, v):
