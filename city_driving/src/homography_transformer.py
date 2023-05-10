@@ -109,13 +109,15 @@ class HomographyTransformer:
 
         #Call to main function
         x, y = self.transformUvToXy(u, v)
+        if u == 0 and v == 0:
+            x, y = 0, 0
         print(x,y)
 
         #Publish relative xy position of object in real world
         relative_xy_msg = ConeLocation()
         relative_xy_msg.x_pos = x
         relative_xy_msg.y_pos = y
-
+        
         msg_pub.publish(relative_xy_msg)
 
     # Transform pixel to real via homography and publish to cone publishers

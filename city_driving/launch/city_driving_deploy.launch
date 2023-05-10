@@ -7,10 +7,11 @@
 -->
   <node pkg="final_challenge2023" name="parking_controller" type="parking_controller.py" output="screen">
     <rosparam command="load" file="$(find final_challenge2023)/params.yaml"/>
-  	<param name="drive_topic" value="/vesc/ackermann_cmd_mux/input/nav_1" />
+  	<param name="drive_topic" value="/vesc/ackermann_cmd_mux/input/navigation" />
   </node>
 
   <node pkg="final_challenge2023" name="cone_detector" type="cone_detector.py" output="screen">
+    <rosparam command="load" file="$(find final_challenge2023)/params.yaml"/>
   </node>
 
   <node pkg="final_challenge2023" name="homography_transformer" type="homography_transformer.py" output="screen">

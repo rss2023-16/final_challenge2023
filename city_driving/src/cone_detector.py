@@ -31,6 +31,7 @@ class ConeDetector():
         self.bridge = CvBridge() # Converts between ROS images and OpenCV Images
 
     def image_callback(self, image_msg):
+        rospy.logerr("IMAGE CALLBACK")
         # Apply your imported color segmentation function (cd_color_segmentation) to the image msg here
         # From your bounding box, take the center pixel on the bottom
         # (We know this pixel corresponds to a point on the ground plane)
@@ -41,20 +42,35 @@ class ConeDetector():
         # YOUR CODE HERE
         # detect the cone and publish its
         # pixel location in the image.
-        use_bbox = False
+        use_bbox = True
         u, v = -1, -1
         if use_bbox:
             bbox = color_segmentation.cd_color_segmentation(image)
-            ((x1, y1), (x2, y2)) = bbox
 
-            u = (x1+x2)//2
-            v = y2
+            if bbox is None:
+                u, v = 0, 0
+            else:
+                ((x1, y1), (x2, y2)) = bbox
+                print(bbox)
+                
+                u = (x1+x2)//2
+                v = y1 #(y1+y2)//2
+                eps = rospy.get_param("~corner")
+                if x1 < eps and x2 < 650 - eps:
+                    u = x1
+                if x2 > 650 -eps and x1 > eps:
+                    u = x2
+                image = cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
         else:
-            u, v = color_segmentation.line_centroid(image)
+            thresholds = [rospy.get_param("~hue_min"), rospy.get_param("~hue_max"), rospy.get_param("~saturation"), rospy.get_param("~value")]
+            u, v = color_segmentation.line_centroid(image, thresholds)
+            if u != 0:
+                u -= 80
             # u, v = color_segmentation.line_farthest_corner(image)
         cone_location = ConeLocationPixel()
         cone_location.u = u
         cone_location.v = v
+        print("U, V", u, v)
         self.cone_pub.publish(cone_location)
         # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
         #################################
@@ -69,3 +85,4 @@ if __name__ == '__main__':
         rospy.spin()
     except rospy.ROSInterruptException:
         pass
+    

@@ -54,8 +54,10 @@ class ParkingController():
         # YOUR CODE HERE
         # Use relative position and your control law to set drive_cmd
         self.update_params()
-
-        angle_error = np.sign(self.relative_y)*np.arctan(abs(self.relative_y/self.relative_x))
+        if self.relative_x != 0:
+            angle_error = np.sign(self.relative_y)*np.arctan(abs(self.relative_y/self.relative_x))
+        else:
+            angle_error = 0
         self.curr_dist = np.sqrt(self.relative_y**2 + self.relative_x**2)
         distance_error = self.relative_x - self.parking_distance
         speed, steering_angle = self.pid_control(distance_error, angle_error)
@@ -81,6 +83,9 @@ class ParkingController():
         
         steering_angle *= np.sign(speed)
         print("speed: ", speed, " angle: ", steering_angle)
+        if self.relative_x == 0 and self.relative_y == 0:
+            speed = -1
+
         if speed > 0:
             drive_cmd.drive.steering_angle = steering_angle
             drive_cmd.drive.speed = speed

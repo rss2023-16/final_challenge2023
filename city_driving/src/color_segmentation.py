@@ -42,14 +42,22 @@ def cd_color_segmentation(img, template=None):
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, (0, 150, 100), (35, 255, 255)) # orange
     #mask = cv2.inRange(hsv, (0, 0, 200), (360, 50, 255)) # white line
-    kernele = np.ones((5, 5), np.uint8)
-    kerneld = np.ones((5, 5), np.uint8)
+    e = 1
+    d = 5
+    kernele = np.ones((e, e), np.uint8)
+    kerneld = np.ones((d, d), np.uint8)
     for i in range(2):
-        mask = cv2.erode(mask, kernele, cv2.BORDER_CONSTANT) 
+        mask = cv2.erode(mask, kernele) 
         mask = cv2.dilate(mask, kerneld)
-    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     img_copy = img.copy()
+    print("found: ", len(contours))
+    if len(contours) == 0:
+        return None
     best_contour = max(contours, key = cv2.contourArea)
+    print("area: ", cv2.contourArea(best_contour))
+    if cv2.contourArea(best_contour) < 750:
+        return None
     x, y, w, h = cv2.boundingRect(best_contour)
     cv2.rectangle(img, (x, y), (x+w,y+h), (0,255,0),3)
 #	image_print(mask)
@@ -63,12 +71,12 @@ def cd_color_segmentation(img, template=None):
     return bounding_box
 
 # returns a mask to find the orange pixels
-def orange_mask_segmentation(img, visualize=False):
+def orange_mask_segmentation(img, thresholds):
     img_hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-    
-    hue_mask = ((img_hsv[:, :, 0] >= rospy.get_param("~hue_min")) & (img_hsv[:, :, 0] <= rospy.get_param("~hue_min")))  # Color thresholding
-    saturation_mask = (img_hsv[:, :, 1] >= rospy.get_param("~saturation"))  # Saturation thresholding
-    value_mask = (img_hsv[:, :, 2] >= rospy.get_param("~value"))  # Value thresholding
+    print("thresholds: ", thresholds)   
+    hue_mask = (img_hsv[:, :, 0] >= thresholds[0])  # Color thresholding
+    saturation_mask = (img_hsv[:, :, 1] >= thresholds[2])  # Saturation thresholding
+    value_mask = (img_hsv[:, :, 2] >= thresholds[3])  # Value thresholding
     full_mask = hue_mask * saturation_mask * value_mask
     # if visualize:
     #     plt.imshow(img_hsv)
@@ -91,9 +99,12 @@ def orange_mask_segmentation(img, visualize=False):
 
     return full_mask
 
-def line_centroid(img):
-    orange_mask = orange_mask_segmentation(img)
-    indices = np.argwhere(orange_mask==True)
+def line_centroid(img, thresholds):
+    orange_mask = orange_mask_segmentation(img, thresholds)
+    indices = np.argwhere(orange_mask==True) 
+    
+    if len(indices) == 0:
+        return (0, 0)
     # rows correspond to y/v, cols corespond to x/u
     v, u = indices.sum(0)/len(indices)
     return(u, v)
