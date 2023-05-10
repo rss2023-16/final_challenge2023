@@ -74,6 +74,8 @@ class PurePursuit(object):
             self.drive_pub.publish(drive_cmd)
             return 
         
+        realPointx, realPointy, rho1, theta1, rho2, theta2 = lookaheadPoint
+
         # rospy.loginfo("grabbed imagepointX and Y")
         realPointx, realPointy = self.transformUvToXy(realPointx, realPointy)
 
@@ -93,6 +95,7 @@ class PurePursuit(object):
         self.drive_pub.publish(drive_cmd)
         self.prev_steering_angle = self.steering_angle
         
+        img = imging.show_lanes(rho1, theta1, rho2, theta2, img)
         img = cv2.rectangle(img, (realPointx-1, realPointy-1), (realPointx+1, realPointy+1), (0, 255, 0), 2)
         # img = cv2.line(img, (realPointx-1, realPointy-1), (realPointx+1, realPointy+1), (0, 255, 0), 2)
         debug_msg = self.bridge.cv2_to_imgmsg(img, "bgr8")
