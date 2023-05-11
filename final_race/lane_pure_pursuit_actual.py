@@ -46,7 +46,7 @@ class PurePursuit(object):
     def update_params(self):
         self.speed = rospy.get_param("~speed", 0.4)
         self.lookahead = rospy.get_param("~lookahead", 1.0) #0.5 # FILL IN #
-
+        self.height = rospy.get_param("~height", 0.3)
         
 
     def image_callback(self, image_msg): 
@@ -60,7 +60,7 @@ class PurePursuit(object):
         Outputs: 
             A drive command to car for it to stay in the lane. 
         '''
-	self.update_params()
+        self.update_params()
         #Create Drive Command# 
         drive_cmd = AckermannDriveStamped()
 
@@ -72,24 +72,19 @@ class PurePursuit(object):
         bottomMidY = imgLenY
         bottomMidX = imgLenX/2
 
-        lookaheadPoint = imging.cd_color_segmentation(img)
-        if lookaheadPoint == None: 
+        segmentation_result = imging.cd_color_segmentation(img, 1.0 - self.height)
+        if segmentation_result == None: 
             drive_cmd.drive.steering_angle = self.prev_steering_angle
             drive_cmd.drive.speed = self.speed
             rospy.loginfo("Could not find lookaheadPoint. Publishing previous steering cmd.")
             self.drive_pub.publish(drive_cmd)
             return 
         
-        realPointx, realPointy, rho1, theta1, rho2, theta2 = lookaheadPoint
-        m = (realPointy-bottomMidY)/(realPointx-bottomMidX)
-        b = realPointy -m*realPointx
-        newX = (bottomMidX + realPointx)/2
-        newY = m*newX + b
-	print(realPointx, realPointy, "I am pixel coords")
-        print(newX,newY,"I am newx and y")
-        # rospy.loginfo("grabbed imagepointX and Y")
-        realPointx, realPointy = self.transformUvToXy(newX, newY)
-	print(realPointx,realPointy, "I AM REAL X AND Y IN CAR FRAME")
+        u, v, rho1, theta1, rho2, theta2 = segmentation_result
+        
+        print(u, v, "I am pixel coords")
+        realPointx, realPointy = self.transformUvToXy(u, v)
+        print(realPointx,realPointy, "I AM REAL X AND Y IN CAR FRAME")
         self.steering_angle = np.arctan(abs(realPointy/realPointx))
         # rospy.logerr("mag of steering angle: " + str(steering_angle))
         insideArcTan = 2*self.wheelbase_length*np.sin(self.steering_angle)/self.lookahead
@@ -108,7 +103,8 @@ class PurePursuit(object):
         self.prev_steering_angle = self.steering_angle
         
         img = imging.show_lanes(rho1, theta1, rho2, theta2, img)
-        img = cv2.rectangle(img, (int(newX)-10, int(newY)-10), (int(newX)+10, int(newY)+1), (0, 255, 0), 2)
+        box_radius = 10
+        img = cv2.rectangle(img, (int(u)-box_radius, int(v)-box_radius), (int(u)+box_radius, int(v)+box_radius), (0, 255, 0), 2)
         # img = cv2.line(img, (realPointx-1, realPointy-1), (realPointx+1, realPointy+1), (0, 255, 0), 2)
         debug_msg = self.bridge.cv2_to_imgmsg(img, "bgr8")
         self.debug_pub.publish(debug_msg)
@@ -127,16 +123,12 @@ class PurePursuit(object):
         Units are in meters.
         """
         homogeneous_point = np.array([[u], [v], [1]])
-        #print(self.h, "I am self.h")
-        #print(self.h.shape, "I am h shape")
         xy = np.dot(self.h, homogeneous_point)
         scaling_factor = 1.0 / xy[2, 0]
         homogeneous_xy = xy * scaling_factor
         x = homogeneous_xy[0, 0]
         y = homogeneous_xy[1, 0]
         return x, y
-
-
 
 
 if __name__=="__main__":
