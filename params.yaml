@@ -2,19 +2,20 @@ angleKp: 1.0
 angleKd: 0.0
 speedKp: 1.0
 speedKd: 0.0
-constantSpeed: 0.6
+constantSpeed: 0.5
 cornerSpeed: 0.3
 parkingDistance: 0.15
 hue_min: 0
 hue_max: 35
-saturation: 140
+saturation: 120
 value: 100
 timeout: 50
 corner: 75
 not_corner: 150
-width: 250
-seconds: 2
+width: 300
+seconds: 2.5
 crop: 99
 erosion: 1
 dilation: 5
-
+wheelbase_length: 0.325
+lookahead: 0.25

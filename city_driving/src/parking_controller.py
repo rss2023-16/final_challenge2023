@@ -44,6 +44,8 @@ class ParkingController():
         self.cornerSpeed = rospy.get_param("~cornerSpeed")
         self.parking_distance = rospy.get_param("~parkingDistance")
         self.timeout = rospy.get_param("~timeout")
+        self.lookahead = rospy.get_param("~lookahead", 1.0)
+        self.wheelbase_length = rospy.get_param("~wheelbase_length", 0.325)
 
     def relative_cone_callback(self, msg):
         self.relative_x = msg.x_pos
@@ -61,7 +63,8 @@ class ParkingController():
         self.curr_dist = np.sqrt(self.relative_y**2 + self.relative_x**2)
         distance_error = self.relative_x - self.parking_distance
         speed, steering_angle = self.pid_control(distance_error, angle_error)
-    
+        insideArcTan = 2*self.wheelbase_length*np.sin(steering_angle)/self.lookahead
+        steering_angle = np.arctan(insideArcTan)
         # limit speed to 1 m/s
         speed = np.sign(speed)*min(1, abs(speed))
 
@@ -80,7 +83,8 @@ class ParkingController():
             speed = 0.19
     
         # speed should always be positive
-        
+        #insideArcTan = 2*self.wheelbase_length*np.sin(steering_angle)/self.lookahead
+
         steering_angle *= np.sign(speed)
         print("speed: ", speed, " angle: ", steering_angle)
         if self.relative_x == 0 and self.relative_y == 0:
