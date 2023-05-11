@@ -104,7 +104,7 @@ def show_lanes(rho1, theta1, rho2, theta2, img):
     # cv2.destroyAllWindows()
     return img
 
-def cd_color_segmentation(img, template=None):
+def cd_color_segmentation(img, bisect_y=0.7):
     best_left_dist = np.inf
     best_right_dist = np.inf
     right_rho, right_theta, left_rho, left_theta = 0, 0, 0, 0
@@ -123,7 +123,7 @@ def cd_color_segmentation(img, template=None):
         # image_print(cv_skel)
         return None
     if len(lines)==1:
-        y = len(img)//3
+        y = int(len(img)*bisect_y)
         epsilon = np.pi/18
         x = int(calc_intersection_with_bottom(lines[0][0][0], lines[0][0][1], y, epsilon))
         # cv2.line(img, (x+10, y+10), (x-10, y-10), (0, 255, 0), 5)
@@ -165,7 +165,6 @@ def cd_color_segmentation(img, template=None):
     # rho2 = rhos[idx[1]]
     # theta2 = thetas[idx[1]]
     # x, y = find_intersection(rho1, theta1, rho2, theta2)
-    x, y = find_intersection(left_rho, left_theta, right_rho, right_theta)
     rospy.loginfo("finishing img processing inside get_lanes")
     # return x, y, rho1, theta1, rho2, theta2
 
@@ -174,7 +173,7 @@ def cd_color_segmentation(img, template=None):
         return None
     if best_right_dist == np.inf:
         # just use left 
-        y = len(img)//3
+        y = int(len(img)*bisect_y)
         epsilon = np.pi/18
         x = int(calc_intersection_with_bottom(left_rho, left_theta, y, epsilon))
         # cv2.line(img, (x+10, y+10), (x-10, y-10), (0, 255, 0), 5)
@@ -184,7 +183,7 @@ def cd_color_segmentation(img, template=None):
         return x, y, left_rho, left_theta, left_rho, left_theta
     if best_left_dist == np.inf:
         # just use left 
-        y = len(img)//3
+        y = int(len(img)*bisect_y)
         epsilon = np.pi/18
         x = int(calc_intersection_with_bottom(right_rho, right_theta, y, epsilon))
         # cv2.line(img, (x+10, y+10), (x-10, y-10), (0, 255, 0), 5)
@@ -192,7 +191,15 @@ def cd_color_segmentation(img, template=None):
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
         return x, y, right_rho, right_theta, right_rho, right_theta
-    return x, y, left_rho, left_theta, right_rho, right_theta
+    else:
+        # x_top, y_top = find_intersection(left_rho, left_theta, right_rho, right_theta)
+        y = int(len(img)*bisect_y)
+        epsilon = np.pi/18
+        x_right = int(calc_intersection_with_bottom(right_rho, right_theta, y, epsilon))
+        x_left = int(calc_intersection_with_bottom(left_rho, left_theta, y, epsilon))
+        x = (x_left+x_right)//2
+        
+        return x, y, left_rho, left_theta, right_rho, right_theta
 
 
 
