@@ -43,22 +43,35 @@ def cd_color_segmentation(img, thresholds, template=None):
     hue_min, hue_max, sat, val = thresholds
     mask = cv2.inRange(hsv, (hue_min, sat, val), (hue_max, 255, 255)) # orange
     #mask = cv2.inRange(hsv, (0, 0, 200), (360, 50, 255)) # white line
-    e = 1
-    d = 5
+    e = 3
+    d = 9
     #kernele = np.ones((e, e), np.uint8)
     kernele = np.ones((e, e), np.uint8, cv2.BORDER_CONSTANT)
     kerneld = np.ones((d, d), np.uint8)
+    dh = 3
+    kerneld_horizontal = np.array([[0, 0, 0, 0, 0], 
+                                   [0, 0, 0, 0, 0],
+                                    [dh, dh, dh, dh, dh],
+                                     [0, 0, 0, 0, 0],
+                                      [0, 0, 0, 0, 0]])
+    kerneld_horizontal = kerneld_horizontal.astype(np.uint8)
+
+
     for i in range(2):
         mask = cv2.erode(mask, kernele) 
         mask = cv2.dilate(mask, kerneld)
+
+    for i in range(10):
+        mask = cv2.dilate(mask, kerneld_horizontal)
+
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
     img_copy = img.copy()
-    print("found: ", len(contours))
+    # print("found: ", len(contours))
     if len(contours) == 0:
         return None
     best_contour = max(contours, key = cv2.contourArea)
     print("area: ", cv2.contourArea(best_contour))
-    if cv2.contourArea(best_contour) < 750:
+    if cv2.contourArea(best_contour) < 2000:
         return None
     x, y, w, h = cv2.boundingRect(best_contour)
     cv2.rectangle(img, (x, y), (x+w,y+h), (0,255,0),3)
