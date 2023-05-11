@@ -26,7 +26,7 @@ def image_print(img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-def cd_color_segmentation(img, template=None):
+def cd_color_segmentation(img, thresholds, template=None):
     """
     Implement the cone detection using color segmentation algorithm
     Input:
@@ -40,16 +40,18 @@ def cd_color_segmentation(img, template=None):
 #	image_print(img)
 
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(hsv, (0, 150, 100), (35, 255, 255)) # orange
+    hue_min, hue_max, sat, val = thresholds
+    mask = cv2.inRange(hsv, (hue_min, sat, val), (hue_max, 255, 255)) # orange
     #mask = cv2.inRange(hsv, (0, 0, 200), (360, 50, 255)) # white line
     e = 1
     d = 5
-    kernele = np.ones((e, e), np.uint8)
+    #kernele = np.ones((e, e), np.uint8)
+    kernele = np.ones((e, e), np.uint8, cv2.BORDER_CONSTANT)
     kerneld = np.ones((d, d), np.uint8)
     for i in range(2):
         mask = cv2.erode(mask, kernele) 
         mask = cv2.dilate(mask, kerneld)
-    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
     img_copy = img.copy()
     print("found: ", len(contours))
     if len(contours) == 0:

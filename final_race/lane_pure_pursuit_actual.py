@@ -60,7 +60,7 @@ class PurePursuit(object):
         Outputs: 
             A drive command to car for it to stay in the lane. 
         '''
-	    self.update_params()
+	self.update_params()
         #Create Drive Command# 
         drive_cmd = AckermannDriveStamped()
 
@@ -85,11 +85,11 @@ class PurePursuit(object):
         b = realPointy -m*realPointx
         newX = (bottomMidX + realPointx)/2
         newY = m*newX + b
-	    print(realPointx, realPointy, "I am pixel coords")
+	print(realPointx, realPointy, "I am pixel coords")
         print(newX,newY,"I am newx and y")
         # rospy.loginfo("grabbed imagepointX and Y")
         realPointx, realPointy = self.transformUvToXy(newX, newY)
-	    print(realPointx,realPointy, "I AM REAL X AND Y IN CAR FRAME")
+	print(realPointx,realPointy, "I AM REAL X AND Y IN CAR FRAME")
         self.steering_angle = np.arctan(abs(realPointy/realPointx))
         # rospy.logerr("mag of steering angle: " + str(steering_angle))
         insideArcTan = 2*self.wheelbase_length*np.sin(self.steering_angle)/self.lookahead
@@ -103,11 +103,12 @@ class PurePursuit(object):
         drive_cmd.drive.speed = self.speed
         #rospy.loginfo("About to publish steering cmds")
         #rospy.loginfo(drive_cmd)
+        print(drive_cmd)
         self.drive_pub.publish(drive_cmd)
         self.prev_steering_angle = self.steering_angle
         
         img = imging.show_lanes(rho1, theta1, rho2, theta2, img)
-        img = cv2.rectangle(img, (int(realPointx)-10, int(realPointy)-10), (int(realPointx)+10, int(realPointy)+1), (0, 255, 0), 2)
+        img = cv2.rectangle(img, (int(newX)-10, int(newY)-10), (int(newX)+10, int(newY)+1), (0, 255, 0), 2)
         # img = cv2.line(img, (realPointx-1, realPointy-1), (realPointx+1, realPointy+1), (0, 255, 0), 2)
         debug_msg = self.bridge.cv2_to_imgmsg(img, "bgr8")
         self.debug_pub.publish(debug_msg)
@@ -126,8 +127,8 @@ class PurePursuit(object):
         Units are in meters.
         """
         homogeneous_point = np.array([[u], [v], [1]])
-        print(self.h, "I am self.h")
-        print(self.h.shape, "I am h shape")
+        #print(self.h, "I am self.h")
+        #print(self.h.shape, "I am h shape")
         xy = np.dot(self.h, homogeneous_point)
         scaling_factor = 1.0 / xy[2, 0]
         homogeneous_xy = xy * scaling_factor

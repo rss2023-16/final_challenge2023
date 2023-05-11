@@ -111,7 +111,7 @@ class HomographyTransformer:
         x, y = self.transformUvToXy(u, v)
         if u == 0 and v == 0:
             x, y = 0, 0
-        print(x,y)
+#        print(x,y)
 
         #Publish relative xy position of object in real world
         relative_xy_msg = ConeLocation()
@@ -142,7 +142,7 @@ class HomographyTransformer:
 
         Units are in meters.
         """
-	print(self.h)
+#	print(self.h)
         homogeneous_point = np.array([[u], [v], [1]])
         xy = np.dot(self.h, homogeneous_point)
         scaling_factor = 1.0 / xy[2, 0]
