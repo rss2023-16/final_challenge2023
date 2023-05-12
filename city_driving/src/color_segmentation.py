@@ -71,7 +71,7 @@ def cd_color_segmentation(img, thresholds, template=None):
         return None
     best_contour = max(contours, key = cv2.contourArea)
     print("area: ", cv2.contourArea(best_contour))
-    if cv2.contourArea(best_contour) < 2000:
+    if cv2.contourArea(best_contour) < 3000:
         return None
     x, y, w, h = cv2.boundingRect(best_contour)
     cv2.rectangle(img, (x, y), (x+w,y+h), (0,255,0),3)

@@ -63,7 +63,7 @@ class ParkingController():
         self.curr_dist = np.sqrt(self.relative_y**2 + self.relative_x**2)
         distance_error = self.relative_x - self.parking_distance
         speed, steering_angle = self.pid_control(distance_error, angle_error)
-        insideArcTan = 2*self.wheelbase_length*np.sin(steering_angle)/self.lookahead
+        insideArcTan = 2*self.wheelbase_length*np.sin(steering_angle)/abs(self.relative_x)
         steering_angle = np.arctan(insideArcTan)
         # limit speed to 1 m/s
         speed = np.sign(speed)*min(1, abs(speed))
@@ -91,10 +91,11 @@ class ParkingController():
             speed = -1
 
         if speed > 0:
-            drive_cmd.drive.steering_angle = steering_angle
+            drive_cmd.drive.steering_angle = max(min(0.3, steering_angle), -0.3)
             drive_cmd.drive.speed = speed
             self.last_speed, self.last_angle = speed, steering_angle
             self.last_orange = rospy.get_rostime().nsecs # in nanoseconds
+            
             self.drive_pub.publish(drive_cmd)
             self.error_publisher()
         else:
