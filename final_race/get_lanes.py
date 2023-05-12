@@ -129,7 +129,7 @@ def cd_color_segmentation(img, bisect_y=0.7):
         x_intersect.append(intersect)
         dist_center = len(img[0])//2-intersect
         dist = abs(dist_center)
-        if dist_center > 0: # right
+        if dist_center < 0: # right
             if dist < best_right_dist:
                 right_rho, right_theta = rho, theta
                 best_right_dist = dist
@@ -140,13 +140,15 @@ def cd_color_segmentation(img, bisect_y=0.7):
 
 
     # didn't find any good lines
-    if best_right_dist == np.inf or best_left_dist == np.inf:
+    if best_right_dist == np.inf and best_left_dist == np.inf:
         return None
-    # if best_right_dist == np.inf:
+    if best_right_dist == np.inf:
+        return 'right'
     #     # just use left 
     #     x = int(calc_intersection_with_bottom(left_rho, left_theta, y, epsilon))
     #     return x, y, left_rho, left_theta, left_rho, left_theta
-    # if best_left_dist == np.inf:
+    if best_left_dist == np.inf:
+        return 'left'
     #     # just use right 
     #     x = int(calc_intersection_with_bottom(right_rho, right_theta, y, epsilon))
     #     return x, y, right_rho, right_theta, right_rho, right_theta
