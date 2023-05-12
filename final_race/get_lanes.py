@@ -86,10 +86,14 @@ def cd_color_segmentation(img, bisect_y=0.7):
     bottom_y = len(img)
     
     # makes top half of image black, removes distractors
-    for v in range(len(img)//2):
-        for u in range(len(img[0])):
-            img[v, u] = 0
-
+    #for v in range(len(img)//2):
+    #    for u in range(len(img[0])):
+    #        img[v, u] = 0
+    # vectorization
+    replace = np.zeros((round(img.shape[0]/2),img.shape[1]))
+    img[0:round(img.shape[0]/2),:] = replace
+    
+    
     # filter for white
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv, (0, 0, 200), (360, 50, 255)) # white line
