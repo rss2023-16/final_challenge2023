@@ -9,37 +9,7 @@ folder = "/home/fiona/racecar_docker/home/racecar_ws/src/corner_img"
 
 
 
-
-def get_images_from_folder(folder):
-    # print("finding images from ", folder)
-    imgs = []
-    for filename in glob.glob(os.path.join(folder, '*.png')):
-        with open(os.path.join(os.getcwd(), filename), 'r') as f: # open in readonly mode
-            imgs.append(f.name)
-    # print("found ", len(imgs), " images")
-
-    for filename in glob.glob(os.path.join(folder, '*.jpg')):
-        with open(os.path.join(os.getcwd(), filename), 'r') as f: # open in readonly mode
-            imgs.append(f.name)
-    return imgs
-
-#fnames = get_images_from_folder(folder)
-fnames = [folder+"/corner-need-tune.png"]
-thresholds = [10, 130, 150]
-
-
-
-for fname in fnames:
-    img = imread(fname)
-    # print("image size: ", len(img), len(img[0]))
-    #img_hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-    plt.imshow(img)
-    plt.show()
-
-
-
-    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
-    mask = cv2.inRange(hsv, (0, 150, 100), (35, 255, 255)) # orange
+corner-need-tune    mask = cv2.inRange(hsv, (0, 150, 100), (19, 255, 255)) # orange
     plt.imshow(mask)
     plt.show()
     kernele = np.ones((1, 1), np.uint8)

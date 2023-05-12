@@ -1,2 +1,6 @@
 speed: .5
-height: 0.3
+height: 0.4
+prop: 0.8
+angleKp: 0.4
+angleKd: 0.4
+angleOffset: 0.05

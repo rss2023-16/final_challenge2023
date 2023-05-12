@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
 import pdb
-import rospy
+from skimage.io import imread, imshow
+import matplotlib.pyplot as plt
 
 #################### X-Y CONVENTIONS #########################
 # 0,0  X  > > > > >
@@ -85,29 +86,44 @@ def cd_color_segmentation(img, bisect_y=0.7):
     y = int(len(img)*bisect_y)
     bottom_y = len(img)
     
-    # makes top half of image black, removes distractors
     for v in range(len(img)//2):
         for u in range(len(img[0])):
             img[v, u] = 0
 
-    # filter for white
-    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(hsv, (0, 0, 200), (360, 50, 255)) # white line
+    plt.imshow(img)
+    plt.show()
 
-    # erode and dilate
+
+    # filter for white
+    # TODO change back to BGR for car!!!!
+    hsv = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+    mask = cv2.inRange(hsv, (0, 0, 200), (360, 50, 255)) # white line
     e = 5
     d = 5
-    kernele = np.ones((e, e), np.uint8, cv2.BORDER_CONSTANT)
+    kernele = np.ones((e, e), np.uint8)
     kerneld = np.ones((d, d), np.uint8)
+
     for i in range(2):
         mask = cv2.erode(mask, kernele) 
         mask = cv2.dilate(mask, kerneld)
 
-    blur = cv2.GaussianBlur(mask, (3, 3), 1)
+    # plt.imshow(mask)
+    # plt.show()
+
+   #blur = cv2.GaussianBlur(mask, (3, 3), 1)
+    # plt.imshow(blur)
+    # plt.show()
+
     threshold = 210 
-    cv_skel = cv2.Canny(blur, 0, threshold)
+    cv_skel = cv2.Canny(mask, 0, threshold)
+    plt.imshow(cv_skel)
+    plt.show()
+
     lines = cv2.HoughLines(cv_skel, 1, np.pi/180, threshold = 50)
+
+    print("lines: ", lines)
     if lines is None:
+        print("!!!! found no lines")
         return None
     if len(lines)==1:
         x = int(calc_intersection_with_bottom(lines[0][0][0], lines[0][0][1], y, epsilon))
@@ -152,25 +168,32 @@ def cd_color_segmentation(img, bisect_y=0.7):
         x_bottom = (x_left+x_right)//2
         y_bottom = len(img)
 
-        if abs(x_right - x_left) < 100:
-       #     print("not enough lines!!!!!!!!!!!!!!!")
-            return None
-
         m = (y_top-y_bottom)/(x_top-x_bottom)*1.0
         b = y_top -m*x_top
 
         # we want to find the x along the y=mx+b line that corresponds with y (y=mx+b --> x = 1/m(y-b))
         #newX = 1/m*(y-b)
         #newY = y
-        #print("intersection: ", x_top, y_top)
-        #print("x left, x right, x bottom", x_left, x_right, x_bottom)
-        #print("m, b", m, b)
+        print("intersection: ", x_top, y_top)
+        print("x left, x right, x bottom", x_left, x_right, x_bottom)
+        print("m, b", m, b)
         try:
             newX = 1/m*(y-b)
             newY = y
-         #   print("newX, newY: ", newX, newY)
+            print("newX, newY: ", newX, newY)
         
             return newX, newY, left_rho, left_theta, right_rho, right_theta
         except:
             return None
+
+
+fname = "/home/fiona/racecar_docker/home/racecar_ws/src/corner_img/track.png"
+im = imread(fname)
+u, v, rho1, theta1, rho2, theta2 = cd_color_segmentation(im)
+
+img = show_lanes(rho1, theta1, rho2, theta2, im)
+box_radius = 10
+img = cv2.rectangle(img, (int(u)-box_radius, int(v)-box_radius), (int(u)+box_radius, int(v)+box_radius), (0, 255, 0), 2)
+plt.imshow(img)
+plt.show()
 
