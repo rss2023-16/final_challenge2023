@@ -109,8 +109,11 @@ class PurePursuit(object):
         # apply direction
         self.steering_angle = np.arctan(insideArcTan)
 
-        self.steering_angle *= np.sign(realPointy)
+        if abs(self.steering_angle) > .10: 
+            self.steering_angle = .10
 
+        self.steering_angle *= np.sign(realPointy)
+       
         drive_cmd.drive.steering_angle = self.angleOffset + self.pid(self.steering_angle)
         drive_cmd.drive.speed = self.speed
         #rospy.loginfo("About to publish steering cmds")
