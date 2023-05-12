@@ -67,6 +67,7 @@ class PurePursuit(object):
         self.update_params()
         #Create Drive Command# 
         drive_cmd = AckermannDriveStamped()
+        turn_angle = rospy.get_param("~turn_angle")
 
         # rospy.loginfo("Going into callback")
         img = self.bridge.imgmsg_to_cv2(image_msg, "bgr8")
@@ -85,7 +86,18 @@ class PurePursuit(object):
            # rospy.loginfo("Could not find lookaheadPoint. Publishing previous steering cmd.")
             self.drive_pub.publish(drive_cmd)
             return 
-        
+        elif segmentation_result=='right':
+            drive_cmd.drive.steering_angle = -1.*turn_angle
+            drive_cmd.drive.speed = self.speed
+           # rospy.loginfo("Could not find lookaheadPoint. Publishing previous steering cmd.")
+            self.drive_pub.publish(drive_cmd)
+            return 
+        elif segmentation_result=='left':
+            drive_cmd.drive.steering_angle = turn_angle
+            drive_cmd.drive.speed = self.speed
+           # rospy.loginfo("Could not find lookaheadPoint. Publishing previous steering cmd.")
+            self.drive_pub.publish(drive_cmd)
+            return 
         u, v, rho1, theta1, rho2, theta2 = segmentation_result
         
        # print(u, v, "I am pixel coords")
@@ -97,9 +109,13 @@ class PurePursuit(object):
 
         # apply direction
         self.steering_angle = np.arctan(insideArcTan)
+        
+        angle_max = rospy.get_param("~angle_max")
+        if abs(self.steering_angle) > angle_max: 
+            self.steering_angle = angle_max
 
         self.steering_angle *= np.sign(realPointy)
-
+       
         drive_cmd.drive.steering_angle = self.angleOffset + self.pid(self.steering_angle)
         drive_cmd.drive.speed = self.speed
         #rospy.loginfo("About to publish steering cmds")
@@ -111,9 +127,9 @@ class PurePursuit(object):
         img = imging.show_lanes(rho1, theta1, rho2, theta2, img)
         box_radius = 10
         img = cv2.rectangle(img, (int(u)-box_radius, int(v)-box_radius), (int(u)+box_radius, int(v)+box_radius), (0, 255, 0), 2)
-        # img = cv2.line(img, (realPointx-1, realPointy-1), (realPointx+1, realPointy+1), (0, 255, 0), 2)
-        # debug_msg = self.bridge.cv2_to_imgmsg(img, "bgr8")
-        # self.debug_pub.publish(debug_msg)
+        img = cv2.line(img, (int(realPointx)-1, int(realPointy)-1), (int(realPointx)+1, int(realPointy)+1), (0, 255, 0), 2)
+        debug_msg = self.bridge.cv2_to_imgmsg(img, "bgr8")
+        self.debug_pub.publish(debug_msg)
 
     def transformUvToXy(self, u, v):
         """
