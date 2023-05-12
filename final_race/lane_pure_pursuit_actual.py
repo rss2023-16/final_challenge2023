@@ -85,7 +85,18 @@ class PurePursuit(object):
            # rospy.loginfo("Could not find lookaheadPoint. Publishing previous steering cmd.")
             self.drive_pub.publish(drive_cmd)
             return 
-        
+        elif segmentation_result=='right':
+            drive_cmd.drive.steering_angle = -0.05
+            drive_cmd.drive.speed = self.speed
+           # rospy.loginfo("Could not find lookaheadPoint. Publishing previous steering cmd.")
+            self.drive_pub.publish(drive_cmd)
+            return 
+        elif segmentation_result=='left:
+            drive_cmd.drive.steering_angle = 0.05
+            drive_cmd.drive.speed = self.speed
+           # rospy.loginfo("Could not find lookaheadPoint. Publishing previous steering cmd.")
+            self.drive_pub.publish(drive_cmd)
+            return 
         u, v, rho1, theta1, rho2, theta2 = segmentation_result
         
        # print(u, v, "I am pixel coords")
