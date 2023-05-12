@@ -3,7 +3,7 @@ import numpy as np
 import pdb
 from skimage.io import imread, imshow
 import matplotlib.pyplot as plt
-
+import cProfile
 #################### X-Y CONVENTIONS #########################
 # 0,0  X  > > > > >
 #
@@ -16,14 +16,14 @@ import matplotlib.pyplot as plt
 #  v
 ###############################################################
 
-def image_print(img):
-    """
-    Helper function to print out images, for debugging. Pass them in as a list.
-    Press any key to continue.
-    """
-    cv2.imshow("image", img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+# def image_print(img):
+#     """
+#     Helper function to # print out images, for debugging. Pass them in as a list.
+#     Press any key to continue.
+#     """
+#     cv2.imshow("image", img)
+#     cv2.waitKey(0)
+#     cv2.destroyAllWindows()
 
 def calc_intersection_with_bottom(rho, theta, bottom_y, epsilon):
     if theta<np.pi/2+epsilon and np.pi/2-epsilon<theta:
@@ -78,20 +78,27 @@ def show_lanes(rho1, theta1, rho2, theta2, img):
 
     return img
 
-def cd_color_segmentation(img, bisect_y=0.7):
+def cd_color_segmentation():#(img, bisect_y=0.7):
+    fname = "/home/fiona/racecar_docker/home/racecar_ws/src/corner_img/track.png"
+    img = imread(fname)
     best_left_dist = np.inf
     best_right_dist = np.inf
     right_rho, right_theta, left_rho, left_theta = 0, 0, 0, 0
     epsilon = np.pi/18
+    bisect_y = 0.7
     y = int(len(img)*bisect_y)
     bottom_y = len(img)
+   # print(img.shape)
     
-    for v in range(len(img)//2):
-        for u in range(len(img[0])):
-            img[v, u] = 0
+    replace = np.zeros((round(img.shape[0]/2),img.shape[1], 3))
+    img[0:round(img.shape[0]/2),:] = replace
 
-    plt.imshow(img)
-    plt.show()
+    # for v in range(len(img)//2):
+    #    for u in range(len(img[0])):
+    #        img[v, u] = 0
+
+    # plt.imshow(img)
+    # plt.show()
 
 
     # filter for white
@@ -110,20 +117,20 @@ def cd_color_segmentation(img, bisect_y=0.7):
     # plt.imshow(mask)
     # plt.show()
 
-   #blur = cv2.GaussianBlur(mask, (3, 3), 1)
+    #blur = cv2.GaussianBlur(mask, (3, 3), 1)
     # plt.imshow(blur)
     # plt.show()
 
     threshold = 210 
     cv_skel = cv2.Canny(mask, 0, threshold)
-    plt.imshow(cv_skel)
-    plt.show()
+    # plt.imshow(cv_skel)
+    # plt.show()
 
     lines = cv2.HoughLines(cv_skel, 1, np.pi/180, threshold = 50)
 
-    print("lines: ", lines)
+    # print("lines: ", lines)
     if lines is None:
-        print("!!!! found no lines")
+        # print("!!!! found no lines")
         return None
     if len(lines)==1:
         x = int(calc_intersection_with_bottom(lines[0][0][0], lines[0][0][1], y, epsilon))
@@ -174,26 +181,35 @@ def cd_color_segmentation(img, bisect_y=0.7):
         # we want to find the x along the y=mx+b line that corresponds with y (y=mx+b --> x = 1/m(y-b))
         #newX = 1/m*(y-b)
         #newY = y
-        print("intersection: ", x_top, y_top)
-        print("x left, x right, x bottom", x_left, x_right, x_bottom)
-        print("m, b", m, b)
+        # print("intersection: ", x_top, y_top)
+        # print("x left, x right, x bottom", x_left, x_right, x_bottom)
+        # print("m, b", m, b)
         try:
             newX = 1/m*(y-b)
             newY = y
-            print("newX, newY: ", newX, newY)
+            # print("newX, newY: ", newX, newY)
         
             return newX, newY, left_rho, left_theta, right_rho, right_theta
         except:
             return None
 
 
-fname = "/home/fiona/racecar_docker/home/racecar_ws/src/corner_img/track.png"
-im = imread(fname)
-u, v, rho1, theta1, rho2, theta2 = cd_color_segmentation(im)
+#fname = "/home/fiona/racecar_docker/home/racecar_ws/src/corner_img/track.png"
+#im = imread(fname)
 
-img = show_lanes(rho1, theta1, rho2, theta2, im)
-box_radius = 10
-img = cv2.rectangle(img, (int(u)-box_radius, int(v)-box_radius), (int(u)+box_radius, int(v)+box_radius), (0, 255, 0), 2)
-plt.imshow(img)
-plt.show()
+def main():
+    cd_color_segmentation()
+
+if __name__ == '__main__':
+
+    cProfile.run('main()')
+
+
+#u, v, rho1, theta1, rho2, theta2 = cd_color_segmentation(im)
+
+#img = show_lanes(rho1, theta1, rho2, theta2, im)
+#box_radius = 10
+#img = cv2.rectangle(img, (int(u)-box_radius, int(v)-box_radius), (int(u)+box_radius, int(v)+box_radius), (0, 255, 0), 2)
+# plt.imshow(img)
+# plt.show()
 

@@ -89,6 +89,8 @@ def cd_color_segmentation(img, bisect_y=0.7):
     #for v in range(len(img)//2):
     #    for u in range(len(img[0])):
     #        img[v, u] = 0
+
+
     # vectorization
     replace = np.zeros((round(img.shape[0]/2),img.shape[1]))
     img[0:round(img.shape[0]/2),:] = replace
@@ -107,9 +109,9 @@ def cd_color_segmentation(img, bisect_y=0.7):
         mask = cv2.erode(mask, kernele) 
         mask = cv2.dilate(mask, kerneld)
 
-    blur = cv2.GaussianBlur(mask, (3, 3), 1)
+    # blur = cv2.GaussianBlur(mask, (3, 3), 1)
     threshold = 210 
-    cv_skel = cv2.Canny(blur, 0, threshold)
+    cv_skel = cv2.Canny(mask, 0, threshold)
     lines = cv2.HoughLines(cv_skel, 1, np.pi/180, threshold = 50)
     if lines is None:
         return None
