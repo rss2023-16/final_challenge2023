@@ -48,7 +48,7 @@ class PurePursuit(object):
         self.speed = rospy.get_param("~speed") #0.4
         #self.lookahead = rospy.get_param("~lookahead")# 1.0 #0.5 # FILL IN #
         self.height = rospy.get_param("~height") #0.3
-        self.p = rospy.get_param("~prop") # 1.0
+        self.p = rospy.get_param("~prop")
         self.angleKp = rospy.get_param("~angleKp")
         self.angleKd = rospy.get_param("~angleKd")
         self.angleOffset = rospy.get_param("~angleOffset")

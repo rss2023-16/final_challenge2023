@@ -92,10 +92,8 @@ def cd_color_segmentation(img, bisect_y=0.7):
 
 
     # vectorization
-  #  print(img.shape)
     replace = np.zeros((img.shape[0]//2,img.shape[1], 3))
     img[0:img.shape[0]//2,:] = replace
-    
     
     # filter for white
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
