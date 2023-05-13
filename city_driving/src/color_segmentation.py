@@ -26,6 +26,44 @@ def image_print(img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+
+def red_cd_color_segmentation(img, thresholds, area):
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    hue_min, hue_max, sat, val = thresholds
+    mask = cv2.inRange(hsv, (hue_min, sat, val), (hue_max, 255, 255)) # orange
+    #mask = cv2.inRange(hsv, (0, 0, 200), (360, 50, 255)) # white line
+    e = 5
+    d = 5
+    #kernele = np.ones((e, e), np.uint8)
+    kernele = np.ones((e, e), np.uint8)
+    kerneld = np.ones((d, d), np.uint8)
+
+    for i in range(2):
+        mask = cv2.dilate(mask, kernele)
+        mask = cv2.dilate(mask, kerneld)
+
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
+    img_copy = img.copy()
+    # print("found: ", len(contours))
+    if len(contours) == 0:
+        return None
+    best_contour = max(contours, key = cv2.contourArea)
+    #print("area: ", cv2.contourArea(best_contour))
+    if cv2.contourArea(best_contour) < area:
+        return None
+    x, y, w, h = cv2.boundingRect(best_contour)
+    cv2.rectangle(img, (x, y), (x+w,y+h), (0,255,0),3)
+#       image_print(mask)
+#       image_print(img_copy)
+
+    bounding_box = ((x,y),(x+w,y+h))
+
+    ########### YOUR CODE ENDS HERE ###########
+
+    # Return bounding box
+    return bounding_box
+
+
 def cd_color_segmentation(img, thresholds, max_width, area=750, template=None):
     """
     Implement the cone detection using color segmentation algorithm
@@ -43,6 +81,8 @@ def cd_color_segmentation(img, thresholds, max_width, area=750, template=None):
     hue_min, hue_max, sat, val = thresholds
     mask = cv2.inRange(hsv, (hue_min, sat, val), (hue_max, 255, 255)) # orange
     #mask = cv2.inRange(hsv, (0, 0, 200), (360, 50, 255)) # white line
+    #red_mask = cv2.inRange(hsv, (0, 100, 130), (8, 255, 255))
+    #not_red = cv2.bitwise_not(red_mask)
     e = 1
     d = 5
     #kernele = np.ones((e, e), np.uint8)
@@ -64,14 +104,14 @@ def cd_color_segmentation(img, thresholds, max_width, area=750, template=None):
     for i in range(3):
         mask = cv2.dilate(mask, kerneld)
         #mask = cv2.dilate(mask, kerneld_horizontal)
-
+    #mask = mask * not_red
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
     img_copy = img.copy()
     if len(contours) == 0:
         print("no contours found")
         return None
     best_contour = max(contours, key = cv2.contourArea)
-    print("area: ", cv2.contourArea(best_contour))
+    #print("area: ", cv2.contourArea(best_contour))
     if cv2.contourArea(best_contour) < area:
         return None
     x, y, w, h = cv2.boundingRect(best_contour)

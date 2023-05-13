@@ -15,6 +15,8 @@ class ParkingController():
     def __init__(self):
         rospy.Subscriber("/relative_cone", ConeLocation,
             self.relative_cone_callback)
+        
+        #rospy.Subscriber("/stop_sign", ConeLocation, self.relative_stop_sign_callback)
 
         DRIVE_TOPIC = rospy.get_param("~drive_topic") # set in launch file; different for simulator vs racecar
         self.drive_pub = rospy.Publisher(DRIVE_TOPIC,
@@ -24,6 +26,9 @@ class ParkingController():
         
         self.relative_x = 0
         self.relative_y = 0
+        
+        self.have_stopped = False
+        self.stopping = False
 
         # PID Control Params
         self.last_time = rospy.get_time()
@@ -31,7 +36,9 @@ class ParkingController():
         self.angle_last_error = 0.0
         self.last_speed = 0.0
         self.last_angle = 0.0
-        self.last_orange = 0 #in nanosecs   
+        self.last_orange = 0 #in nanosecs
+
+        self.time = 0
         
         self.update_params()
 
@@ -46,8 +53,48 @@ class ParkingController():
         self.timeout = rospy.get_param("~timeout")
         self.lookahead = rospy.get_param("~lookahead", 1.0)
         self.wheelbase_length = rospy.get_param("~wheelbase_length", 0.325)
+        
+        self.stopping_dist = rospy.get_param("~stopping_dist")
+        self.stop_time = rospy.get_param("~stop_time", 3.0)
+
+    def relative_stop_sign_callback(self, msg):
+        print("stop sign callback")
+        self.relative_x = msg.x_pos
+        self.relative_y = msg.y_pos
+        drive_cmd = AckermannDriveStamped()
+        print("distance from stop sign: ", self.relative_x)
+
+        self.update_params()
+        if not self.have_stopped:
+            if self.relative_x < self.stopping_dist and not self.stopping and self.relative_x > 0:
+                print("stopping")
+                self.stopping = True
+                #drive_cmd.drive.speed = 0
+                #self.drive_pub.publish(drive_cmd)
+                
+                self.time = rospy.get_time()
+            
+            if self.stopping:
+                print("stopping")
+                drive_cmd.drive.speed = 0.0
+                drive_cmd.drive.steering_angle = 0.0
+                self.drive_pub.publish(drive_cmd)
+                print(drive_cmd)
+
+            if rospy.get_time() - self.time > self.stop_time:
+                self.stopping = False
+                #print("stopped")
+
+                self.have_stopped = True
+                #self.stopping = False
+                        
+
 
     def relative_cone_callback(self, msg):
+        if self.stopping:
+            return 
+
+        print("relative cone callback")
         self.relative_x = msg.x_pos
         self.relative_y = msg.y_pos
         drive_cmd = AckermannDriveStamped()

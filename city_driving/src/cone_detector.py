@@ -29,10 +29,13 @@ class ConeDetector():
         self.debug_pub = rospy.Publisher("/cone_debug_img", Image, queue_size=10)
         self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
         self.bridge = CvBridge() # Converts between ROS images and OpenCV Images
+        self.stop_pub = rospy.Publisher("stop_sign_px", ConeLocationPixel, queue_size=10)
         # self.turn_left = False
         # self.turn_right = False
         # self.corner = False
         # self.time = 0
+
+        self.has_stopped = False
 
     def image_callback(self, image_msg):
         #rospy.logerr("IMAGE CALLBACK")
@@ -54,7 +57,24 @@ class ConeDetector():
         im_width = 672
         max_width = im_width - 2 * eps
         if use_bbox:
+            red_bbox = color_segmentation.red_cd_color_segmentation(image, [0, 8, 100, 130], 2000)
             bbox = color_segmentation.cd_color_segmentation(image, thresholds, max_width, area)
+
+            if red_bbox is not None:
+                ((x1, y1), (x2, y2)) = red_bbox
+                
+                u = (x1 + x2)//2
+                v = 350 - (y1 + y2)//2 - 30#y2 + (y2 - y1)
+
+                stop_location = ConeLocationPixel()
+                stop_location.u = u
+                stop_location.v = v
+                #print("U, V", u, v)
+                self.stop_pub.publish(stop_location)
+                
+                image = cv2.rectangle(image, (x1, y1), (x2, v), (255, 0, 0), 2)
+
+            #bbox = color_segmentation.cd_color_segmentation(image, thresholds, max_width, area)
 
             if bbox is None:
                 u, v = 0, 0
@@ -140,7 +160,7 @@ class ConeDetector():
         #                 #u = min(x2, 672 - rospy.get_param("~crop"))
         #     print("turning RIGHT")
     
-                image = cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                #image = cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
         else:
             thresholds = [rospy.get_param("~hue_min"), rospy.get_param("~hue_max"), rospy.get_param("~saturation"), rospy.get_param("~value")]
             u, v = color_segmentation.line_centroid(image, thresholds)
