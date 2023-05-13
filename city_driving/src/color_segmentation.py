@@ -26,7 +26,7 @@ def image_print(img):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-def cd_color_segmentation(img, thresholds, area=750, template=None):
+def cd_color_segmentation(img, thresholds, max_width, area=750, template=None):
     """
     Implement the cone detection using color segmentation algorithm
     Input:
@@ -67,19 +67,42 @@ def cd_color_segmentation(img, thresholds, area=750, template=None):
 
     contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)[-2:]
     img_copy = img.copy()
-    # print("found: ", len(contours))
     if len(contours) == 0:
+        print("no contours found")
         return None
     best_contour = max(contours, key = cv2.contourArea)
     print("area: ", cv2.contourArea(best_contour))
     if cv2.contourArea(best_contour) < area:
         return None
     x, y, w, h = cv2.boundingRect(best_contour)
-    cv2.rectangle(img, (x, y), (x+w,y+h), (0,255,0),3)
-#	image_print(mask)
-#	image_print(img_copy)
-        
+    cv2.rectangle(img, (x, y), (x+w,y+h), (0,255,0),3)        
+
+    if w >= max_width:
+        cropped_img = mask[y:int(y + h/3), :]
+        indices = np.argwhere(cropped_img==255) 
+
+        if len(indices) == 0:
+            print("No indices??")
+            return (0, 0)
+        # rows correspond to y/v, cols corespond to x/u
+        v, u = indices.sum(0)/len(indices)
+        v = int(v)
+        u = int(u)
+
+        print("center x y: ", u, v+y)
+        img_width = 672
+        if u > int(672/2):
+            u = 600
+        else:
+            u = 0
+
+        x = u
+        y = v + y
+        w = 2
+        h = 2
+
     bounding_box = ((x,y),(x+w,y+h))
+
 
     ########### YOUR CODE ENDS HERE ###########
 
@@ -116,9 +139,23 @@ def orange_mask_segmentation(img, thresholds):
     return full_mask
 
 def line_centroid(img, thresholds):
-    orange_mask = orange_mask_segmentation(img, thresholds)
-    indices = np.argwhere(orange_mask==True) 
-    
+    mask = orange_mask_segmentation(img, thresholds)
+
+    e = 1
+    d = 5
+    #kernele = np.ones((e, e), np.uint8)
+    kernele = np.ones((e, e), np.uint8)
+    kerneld = np.ones((d, d), np.uint8)
+
+    for i in range(1):
+        mask = cv2.erode(mask, kernele) 
+        
+
+    for i in range(3):
+        mask = cv2.dilate(mask, kerneld)
+
+    indices = np.argwhere(mask==True) 
+
     if len(indices) == 0:
         return (0, 0)
     # rows correspond to y/v, cols corespond to x/u

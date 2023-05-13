@@ -50,8 +50,11 @@ class ConeDetector():
         u, v = -1, -1
         thresholds = [rospy.get_param("~hue_min"), rospy.get_param("~hue_max"), rospy.get_param("~saturation"), rospy.get_param("~value")]
         area = rospy.get_param("~area")
+        eps = rospy.get_param("~corner")
+        im_width = 672
+        max_width = im_width - 2 * eps
         if use_bbox:
-            bbox = color_segmentation.cd_color_segmentation(image, thresholds, area)
+            bbox = color_segmentation.cd_color_segmentation(image, thresholds, max_width, area)
 
             if bbox is None:
                 u, v = 0, 0
@@ -60,10 +63,10 @@ class ConeDetector():
             else:
                 ((x1, y1), (x2, y2)) = bbox
          #       print(bbox)
-                im_width = 672
+                
                 u = (x1+x2)//2 - 50
                 v = y1 #(y1+y2)//2
-                eps = rospy.get_param("~corner")
+                
                 if x1 < eps and x2 > im_width - eps:
                     u, v = 0, 0
                 if x1 < eps and x2 < im_width - eps:
