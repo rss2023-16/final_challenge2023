@@ -109,7 +109,7 @@ class HomographyTransformer:
 
         #Call to main function
         x, y = self.transformUvToXy(u, v)
-        if u == 0 and v == 0:
+        if u == 0 and v == 0 or u == -1 and v == -1:
             x, y = 0, 0
 #        print(x,y)
 

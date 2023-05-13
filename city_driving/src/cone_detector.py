@@ -29,10 +29,10 @@ class ConeDetector():
         self.debug_pub = rospy.Publisher("/cone_debug_img", Image, queue_size=10)
         self.image_sub = rospy.Subscriber("/zed/zed_node/rgb/image_rect_color", Image, self.image_callback)
         self.bridge = CvBridge() # Converts between ROS images and OpenCV Images
-	self.turn_left = False
-	self.turn_right = False
-        self.corner = False
-        self.time = 0
+        # self.turn_left = False
+        # self.turn_right = False
+        # self.corner = False
+        # self.time = 0
 
     def image_callback(self, image_msg):
         #rospy.logerr("IMAGE CALLBACK")
@@ -49,22 +49,30 @@ class ConeDetector():
         use_bbox = True
         u, v = -1, -1
         thresholds = [rospy.get_param("~hue_min"), rospy.get_param("~hue_max"), rospy.get_param("~saturation"), rospy.get_param("~value")]
+        area = rospy.get_param("~area")
         if use_bbox:
-            bbox = color_segmentation.cd_color_segmentation(image, thresholds)
+            bbox = color_segmentation.cd_color_segmentation(image, thresholds, area)
 
             if bbox is None:
                 u, v = 0, 0
-                self.left_turn = False
-                self.right_turn = False
+                # self.left_turn = False
+                # self.right_turn = False
             else:
                 ((x1, y1), (x2, y2)) = bbox
          #       print(bbox)
-                
+                im_width = 672
                 u = (x1+x2)//2 - 50
                 v = y1 #(y1+y2)//2
-                # eps = rospy.get_param("~corner")
+                eps = rospy.get_param("~corner")
+                if x1 < eps and x2 > im_width - eps:
+                    u, v = 0, 0
+                if x1 < eps and x2 < im_width - eps:
+                    u = x1
+                if x2 > im_width -eps and x1 > eps:
+                    u = x2
+                image = cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 # not_corner_eps = rospy.get_param("~not_corner")
-		
+        
                 # if not self.turn_left and not self.turn_right:
                 #     if x1 < eps and x2 < 672 - eps:
                 #         self.turn_left = True
@@ -78,47 +86,47 @@ class ConeDetector():
                 #       if x2 < 650 - not_corner_eps:
                 #           self.turn_right = False
 
-                width = rospy.get_param("~width")
+                # width = rospy.get_param("~width")
 
-                print("width: ", x2-x1)
+                # print("width: ", x2-x1)
 
-                if not self.corner:
-                    if (x2-x1) >= width:
-                        self.corner = True
-                        self.time = rospy.get_time()
+                # if not self.corner:
+                #     if (x2-x1) >= width:
+                #         self.corner = True
+                #         self.time = rospy.get_time()
 
-                        if x1 < 672 - x2:
-                            print("left turn")
-                            self.turn_left = True
-                        elif 672 - x2 < x1:
-                            print("right turn")
-                            self.turn_right = True
+                #         if x1 < 672 - x2:
+                #             print("left turn")
+                #             self.turn_left = True
+                #         elif 672 - x2 < x1:
+                #             print("right turn")
+                #             self.turn_right = True
                     
-                if self.corner: 
-                    if (x2-x1) < width:
-                        self.corner = False
-                        self.turn_right = False
-                        self.turn_left = False
-                    else:
-                        if self.turn_left:
-                            print("left turn")
-                            u = 168
-                        elif self.turn_right:
-                            print("right turn")
-                            u = 504
+                # if self.corner: 
+                #     if (x2-x1) < width:
+                #         self.corner = False
+                #         self.turn_right = False
+                #         self.turn_left = False
+                #     else:
+                #         if self.turn_left:
+                #             print("left turn")
+                #             u = 168
+                #         elif self.turn_right:
+                #             print("right turn")
+                #             u = 504
                     
-                        ####### new code for turning based on time #######
-                        seconds = rospy.get_param("~seconds")
+                #         ####### new code for turning based on time #######
+                #         seconds = rospy.get_param("~seconds")
                         
-                        if rospy.get_time() - self.time > seconds:
-                            self.corner = False
-                            self.turn_right = False
-                            self.turn_left = False
-                        else:
-                            if self.turn_left:
-                                u = 168
-                            elif self.turn_right:
-                                u = 504
+                #         if rospy.get_time() - self.time > seconds:
+                #             self.corner = False
+                #             self.turn_right = False
+                #             self.turn_left = False
+                #         else:
+                #             if self.turn_left:
+                #                 u = 168
+                #             elif self.turn_right:
+                #                 u = 504
 
         # if self.turn_left:
         #     u = rospy.get_param("~crop")
@@ -128,7 +136,7 @@ class ConeDetector():
         #     u = 672 - rospy.get_param("~crop")
         #                 #u = min(x2, 672 - rospy.get_param("~crop"))
         #     print("turning RIGHT")
-	
+    
                 image = cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
         else:
             thresholds = [rospy.get_param("~hue_min"), rospy.get_param("~hue_max"), rospy.get_param("~saturation"), rospy.get_param("~value")]
@@ -139,7 +147,7 @@ class ConeDetector():
         cone_location = ConeLocationPixel()
         cone_location.u = u
         cone_location.v = v
-#        print("U, V", u, v)
+        #print("U, V", u, v)
         self.cone_pub.publish(cone_location)
         # vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
         #################################
